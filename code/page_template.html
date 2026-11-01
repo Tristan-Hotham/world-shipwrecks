@@ -1,0 +1,695 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Shipwrecks of the World</title>
+<meta name="description" content="{{lists.n|int}} shipwrecks from Wikipedia's lists, 1700 to 2025, counted year by year by cause and flag, and an interactive map of {{source.n|int}} wrecks with a place, with an honest look at what the record misses.">
+<meta property="og:title" content="Shipwrecks of the world, and how many over time">
+<meta property="og:description" content="{{lists.n|int}} shipwrecks listed on Wikipedia since 1700. The worst year was {{lists.peak_year|raw}}, with {{lists.peak_n|int}}; three of the five worst are war years.">
+<meta property="og:image" content="https://maps.tristanhotham.com/world-shipwrecks/header.png">
+<meta property="og:url" content="https://maps.tristanhotham.com/world-shipwrecks/">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800;9..144,900&family=IBM+Plex+Mono:wght@400;500&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+/* Wreck chart: pale paper, deep sea blue, signal red for the war years. */
+:root{
+  --bg:#F6F4EF; --panel:#EAE7DF; --fg:#1D2128; --muted:#636A72; --rule:#DDD8CC; --card:#FFFEFA; --border:#CBC5B8;
+  --hot:#B3202A; --cool:#2F7FB8; --gold:#C9A227; --ink:#1F3A5F; --land:#E6E2D8; --sea:#E4ECF0;
+  --display:"Fraunces",Georgia,"Times New Roman",serif;
+  --body:"Source Serif 4",Georgia,"Times New Roman",serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#11161D; --panel:#1B222C; --fg:#ECEEF1; --muted:#A2A8B0; --rule:#2E3540; --card:#161C24; --border:#444B57;
+  --hot:#FF6B6B; --cool:#7DB7E6; --gold:#F2C94E; --ink:#A9C2E6; --land:#232831; --sea:#131A22; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#11161D; --panel:#1B222C; --fg:#ECEEF1; --muted:#A2A8B0; --rule:#2E3540; --card:#161C24; --border:#444B57;
+  --hot:#FF6B6B; --cool:#7DB7E6; --gold:#F2C94E; --ink:#A9C2E6; --land:#232831; --sea:#131A22; color-scheme:dark}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:400 18px/1.62 var(--body);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));overflow-x:hidden}
+.wrap{max-width:700px;margin:0 auto;padding-block:28px 64px}
+.wrap .bleed{width:min(1180px,calc(100vw - 32px));margin-left:calc((100% - min(1180px,100vw - 32px))/2);margin-right:0}
+a{color:inherit;text-decoration-color:var(--hot);text-underline-offset:3px}
+.kicker{font:500 12px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.kicker b{background:var(--ink);color:var(--bg);padding:5px 8px;font-weight:500}
+header.hero{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px 24px;align-items:end;border-bottom:6px double var(--fg);padding-bottom:22px;margin-top:18px}
+h1{font:900 clamp(44px,11vw,94px)/.9 var(--display);letter-spacing:-.02em;margin:0;text-wrap:balance}
+h1 .a{color:var(--hot)} h1 .b{color:var(--cool)}
+.mark{width:clamp(78px,16vw,128px);height:auto;display:block;color:var(--fg)}
+.dek{grid-column:1/-1;font-size:21px;line-height:1.42;margin:8px 0 0;max-width:56ch}
+.byline{font:400 13px/1.4 var(--mono);color:var(--muted);margin-top:14px}
+h2{font:800 34px/1.04 var(--display);letter-spacing:-.01em;margin:54px 0 10px;text-wrap:balance}
+h2 .n{font:500 13px/1 var(--mono);color:var(--hot);display:block;letter-spacing:.1em;margin-bottom:10px}
+h3{font:600 20px/1.25 var(--display);margin:28px 0 6px}
+p{margin:0 0 16px}
+.lede::first-letter{font:900 72px/.8 var(--display);float:left;margin:6px 10px 0 0;color:var(--hot)}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--rule);border:1px solid var(--rule);margin:26px 0 8px}
+.stats div{background:var(--card);padding:14px 12px}
+.stats b{display:block;font:900 clamp(22px,4.4vw,32px)/1 var(--display);letter-spacing:-.01em}
+.stats b.h{color:var(--hot)} .stats b.c{color:var(--cool)} .stats b.g{color:var(--gold)} .stats b.p{color:var(--ink)}
+.stats span{font:400 12px/1.35 var(--mono);color:var(--muted);display:block;margin-top:6px}
+@media (max-width:600px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.figure{margin:26px 0 30px}
+.fig-h{font:600 19px/1.25 var(--display);margin:0 0 4px}
+.fig-sub{font:400 13px/1.45 var(--mono);color:var(--muted);margin:0 0 12px}
+.src{font:400 12px/1.45 var(--mono);color:var(--muted);margin-top:10px}
+.chart{width:100%;position:relative}
+.chart svg{display:block;width:100%;height:auto;overflow:visible}
+svg text{font-family:var(--mono);fill:var(--fg)}
+.lab{font-size:12px}.lab.m{fill:var(--muted)}.lab.b{font-weight:500}.lab.s{font-size:11px}
+.tip{position:absolute;pointer-events:none;background:var(--fg);color:var(--bg);font:400 12px/1.45 var(--mono);padding:8px 10px;border-radius:3px;max-width:290px;z-index:1000;transform:translate(-50%,calc(-100% - 12px));display:none}
+.tip b{font-weight:500}
+.controls{display:flex;gap:8px;align-items:center;margin:0 0 10px;flex-wrap:wrap}
+.scrollrow{display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;padding-bottom:2px;max-width:100%}
+.scrollrow .btn{flex:0 0 auto;white-space:nowrap}
+.ctl-l{font:500 11px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-right:2px;flex:0 0 auto;align-self:center}
+.btn{font:500 12px/1 var(--mono);background:var(--card);color:var(--fg);border:1px solid var(--border);border-radius:3px;padding:8px 10px;cursor:pointer;min-height:36px}
+.btn[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.btn i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:-1px;border:1px solid rgba(0,0,0,.2)}
+.btn:focus-visible,input:focus-visible,summary:focus-visible,select:focus-visible{outline:2px solid var(--hot);outline-offset:2px}
+.btn.play{background:var(--hot);color:#fff;border-color:var(--hot);min-width:92px}
+select.btn{padding:6px 8px;max-width:100%}
+.searchbox{position:relative;flex:1 1 260px;min-width:0}
+input[type=search]{font:400 15px/1 var(--mono);background:var(--card);color:var(--fg);border:1px solid var(--border);border-radius:3px;padding:10px 11px;min-height:40px;width:100%}
+.suggest{position:absolute;left:0;right:0;top:100%;margin:2px 0 0;padding:0;list-style:none;background:var(--card);border:1px solid var(--border);z-index:1001;font:400 13px/1.3 var(--mono);display:none;max-height:340px;overflow:auto}
+.suggest li{padding:8px 10px;cursor:pointer;border-bottom:1px solid var(--rule)}
+.suggest li span{color:var(--muted)}
+.suggest li[aria-selected="true"],.suggest li:hover{background:var(--panel)}
+.yearbox{display:grid;grid-template-columns:auto auto minmax(0,1fr) auto;gap:10px;align-items:center;margin:0 0 10px;font:500 13px/1 var(--mono)}
+.yearbox .yv{font:800 22px/1 var(--display);min-width:4.2ch;text-align:center}
+@media (max-width:600px){.yearbox{grid-template-columns:auto minmax(0,1fr) auto}.yearbox .play{grid-column:1/-1;justify-self:start}}
+.dual{position:relative;height:34px}
+.dual input[type=range]{position:absolute;left:0;right:0;top:4px;width:100%;pointer-events:none;-webkit-appearance:none;appearance:none;background:none;margin:0;height:26px}
+.dual input[type=range]::-webkit-slider-thumb{pointer-events:auto;-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:var(--hot);border:2px solid var(--card);cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.dual input[type=range]::-moz-range-thumb{pointer-events:auto;width:18px;height:18px;border-radius:50%;background:var(--hot);border:2px solid var(--card);cursor:pointer}
+.dual .track{position:absolute;left:0;right:0;top:15px;height:4px;background:var(--rule);border-radius:2px}
+.dual .fill{position:absolute;top:15px;height:4px;background:var(--hot);border-radius:2px}
+.mapgrid{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:14px;align-items:start}
+@media (max-width:900px){.mapgrid{grid-template-columns:1fr}}
+.side{background:var(--card);border:1px solid var(--border);padding:12px 12px 10px;font:400 13px/1.45 var(--mono);max-height:660px;overflow:auto}
+@media (max-width:900px){.side{max-height:none}}
+.side h4{font:500 11px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:14px 0 8px}
+.side h4:first-child{margin-top:2px}
+.side .big{font:800 26px/1.1 var(--display);margin:2px 0 4px}
+.side .sub{color:var(--muted);font-size:12px;margin:0 0 8px}
+.side ol,.side ul{margin:4px 0 8px;padding-left:20px}
+.side li{margin:3px 0}
+.side li small,.side td small{color:var(--muted)}
+.side table{width:100%;border-collapse:collapse;margin:4px 0 6px}
+.side td{padding:4px 4px 4px 0;border-bottom:1px solid var(--rule);vertical-align:top}
+.side td.num{text-align:right;white-space:nowrap}
+.back{font:400 12px var(--mono);background:none;border:0;color:var(--muted);padding:0;cursor:pointer;text-decoration:underline;margin-bottom:6px}
+.go{cursor:pointer;text-decoration:underline;text-decoration-color:var(--border);text-underline-offset:3px}
+.lmap{height:640px;border:1px solid var(--border);background:var(--sea);border-radius:2px}
+@media (max-width:600px){.lmap{height:min(62vh,470px)}}
+.leaflet-container{font:400 12px/1.4 var(--mono);background:var(--sea)}
+.dotcanvas{position:absolute;left:0;top:0;pointer-events:none}
+.lyrBtn{background:var(--card,var(--bg));color:var(--fg);border:1px solid var(--border);border-radius:3px;font:600 12px/1 var(--mono);padding:8px 10px;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.12)}
+.lyrBtn[aria-expanded="true"]{background:var(--fg);color:var(--bg)}
+.lyrPanel{background:var(--card,var(--bg));color:var(--fg);border:1px solid var(--border);border-radius:3px;padding:10px 12px 8px;margin-top:6px;width:250px;box-shadow:0 2px 10px rgba(0,0,0,.15);font:400 12px/1.3 var(--mono);max-height:min(70vh,520px);overflow:auto}
+.lyrPanel[hidden]{display:none}
+.lyrPanel .row{margin:0 0 9px}
+.lyrPanel label{display:flex;gap:6px;align-items:center;cursor:pointer;font-weight:600}
+.lyrPanel input[type=range]{width:100%;accent-color:var(--fg)}
+.lyrPanel select{font:400 12px var(--mono);background:var(--bg);color:var(--fg);border:1px solid var(--border);border-radius:2px;padding:2px 4px;width:100%;min-height:0}
+.lyrPanel .sub{display:flex;gap:6px;align-items:center;color:var(--muted);font-size:11px;margin-top:3px}
+.lyrPanel .sub span{flex:0 0 58px}
+.lyrPanel .hd{font:500 10.5px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:10px 0 7px;border-top:1px solid var(--rule);padding-top:9px}
+.lyrPanel .reset{font:400 11px var(--mono);color:var(--muted);background:none;border:0;padding:0;cursor:pointer;text-decoration:underline}
+.cityL{font:500 11px/1 var(--mono);color:var(--fg);white-space:nowrap;text-shadow:0 0 3px var(--bg),0 0 3px var(--bg),0 0 2px var(--bg);pointer-events:none}
+.cityL i{display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--fg);margin-right:4px;vertical-align:1px}
+.cityL.s{font-size:10px;font-weight:400}
+.cntL{font:700 11px/1 var(--mono);color:var(--fg);white-space:nowrap;text-transform:uppercase;letter-spacing:.06em;opacity:.75;text-shadow:0 0 3px var(--bg),0 0 3px var(--bg);pointer-events:none;text-align:center}
+.boxL{font:600 11px/1.2 var(--mono);color:var(--fg);white-space:nowrap;text-shadow:0 0 3px var(--bg),0 0 3px var(--bg);pointer-events:none}
+.mapnote{background:color-mix(in srgb,var(--card) 92%,transparent);border:1px solid var(--border);border-radius:3px;padding:6px 9px;font:400 12px/1.35 var(--mono);max-width:min(300px,62vw);box-shadow:0 1px 4px rgba(0,0,0,.12)}
+.mapnote b{font-weight:600}
+.mapnote:empty{display:none}
+.yearBadge{font:900 44px/1 var(--display);color:var(--fg);text-shadow:0 0 6px var(--bg),0 0 3px var(--bg);pointer-events:none;margin:6px 0 0 4px}
+.yearBadge small{display:block;font:500 12px/1.3 var(--mono);color:var(--fg);margin-top:4px}
+.yearBadge:empty{display:none}
+.leaflet-bar a,.leaflet-bar a:hover{background:var(--card);color:var(--fg);border-bottom-color:var(--border)}
+.leaflet-control-attribution{background:color-mix(in srgb,var(--card) 85%,transparent)!important;color:var(--muted)}
+.leaflet-control-attribution a{color:var(--fg)}
+.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:var(--card);color:var(--fg)}
+.leaflet-popup-content{font:400 12.5px/1.45 var(--mono);margin:10px 12px}
+.leaflet-popup-content b{font:700 15px/1.2 var(--display)}
+.legend{display:flex;gap:6px 14px;flex-wrap:wrap;font:400 12px/1.3 var(--mono);color:var(--muted);margin-top:8px;align-items:center}
+.legend span{display:inline-flex;align-items:center}
+.legend i{display:inline-block;width:13px;height:13px;margin-right:6px;border-radius:50%;border:1px solid rgba(0,0,0,.15)}
+.legend i.sq{border-radius:2px}
+.legend .ramp{display:inline-block;width:150px;height:12px;border-radius:2px;margin:0 6px;border:1px solid rgba(0,0,0,.1)}
+.pull{font:600 26px/1.25 var(--display);border-left:6px solid var(--hot);padding:4px 0 4px 18px;margin:30px 0}
+.note{background:var(--panel);border:1px solid var(--rule);padding:14px 16px;font-size:16px;margin:22px 0}
+.note h3{margin-top:0}
+table.tbl{width:100%;border-collapse:collapse;font:400 13px/1.4 var(--mono)}
+table.tbl th{font:500 11px/1 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-align:left;padding:6px 6px 6px 0;border-bottom:2px solid var(--fg)}
+table.tbl td{padding:6px 6px 6px 0;border-bottom:1px solid var(--rule);vertical-align:top}
+table.tbl td.r,table.tbl th.r{text-align:right;white-space:nowrap}
+table.tbl tr[data-i]{cursor:pointer}
+table.tbl tr[data-i]:hover td{background:var(--panel)}
+.tablebox{max-height:460px;overflow:auto;border:1px solid var(--border);background:var(--card);padding:0 10px}
+details{margin:14px 0}
+summary{font:500 13px/1.4 var(--mono);cursor:pointer;color:var(--fg);padding:8px 0}
+.cta{display:flex;gap:10px;flex-wrap:wrap;margin:18px 0}
+.cta a{font:500 13px/1 var(--mono);text-decoration:none;border:1px solid var(--fg);padding:11px 14px;border-radius:3px}
+.cta a.p{background:var(--hot);border-color:var(--hot);color:#fff}
+footer{border-top:6px double var(--fg);margin-top:56px;padding-top:16px;font:400 13px/1.55 var(--mono);color:var(--muted)}
+footer p{margin:0 0 10px}
+.theme{position:fixed;right:12px;bottom:12px;z-index:1002}
+@media print{.theme,.controls{display:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="kicker"><b>Data study</b><span>Shipwrecks</span><span>World, 1700 to 2025</span></div>
+<header class="hero">
+  <h1>Shipwrecks <span class="a">of the</span> <span class="b">world</span></h1>
+  <svg class="mark" viewBox="0 0 120 120" aria-hidden="true"><g id="heroMark"></g></svg>
+  <p class="dek">Wikipedia's volunteers have listed {{lists.n|int}} shipwrecks, year by year, from 1700 to today. Count them and three of the five worst years are war years: {{lists.peak_year|raw}}, with {{lists.peak_n|int}}, then 1917 and 1942. But the list is also a portrait of its sources, and of the British newspapers that recorded every lost collier and brig in the nineteenth century.</p>
+</header>
+<div class="byline">Dr Tristan Hotham · Independent researcher · 2026 · Data: Wikipedia contributors (lists of shipwrecks); Wikidata (including records from Canmore and Coflein); NOAA Office of Coast Survey (AWOIS); Natural Earth</div>
+
+<div class="stats">
+  <div><b class="p">{{lists.n|int}}</b><span>shipwrecks in Wikipedia's lists, 1700 to 2025</span></div>
+  <div><b class="h">{{lists.peak_n|int}}</b><span>listed in {{lists.peak_year|raw}}, the worst year; 1917 and 1942 follow close behind</span></div>
+  <div><b class="g">{{lists.ww2_vs_inter|f1}}×</b><span>as many wrecks a year in 1939 to 1945 as between the wars</span></div>
+  <div><b class="c">{{lists.c19_pct|pc}}</b><span>of all listed wrecks are from the 1800s, mostly British ships</span></div>
+</div>
+
+<p class="lede">Ships have always been lost: driven ashore in gales, sunk in collisions, burnt, torpedoed. For three centuries, somebody has usually written it down. Wikipedia's volunteers have gathered those notices into a remarkable set of pages, one "List of shipwrecks" for every month from the 1820s onwards and for every year or decade before, each entry with the ship, its flag, what happened and often a source. I turned all of them into one table: {{lists.n|int}} wrecks once duplicates are removed.</p>
+<p>That table is the backbone of this page. Its timeline shows how many wrecks were <i>recorded</i> each year, by cause and by flag, and the two world wars stand out exactly as you would expect. Its great nineteenth-century plateau is more about record keeping than danger: those pages lean heavily on British newspapers, above all Lloyd's List, which reported every British loss it heard of. The map below adds every wreck I could find with coordinates: {{source.lists_points|int}} of the Wikipedia entries, {{source.wd_mapped|int}} wrecks from Wikidata and {{source.awois_kept|int}} from the United States' wreck charts.</p>
+
+<h2><span class="n">01 · How many over time</span>Three centuries of recorded wrecks</h2>
+<p>From almost nothing in the early 1700s ({{lists.early_avg|f1}} entries a year before 1750), the lists climb steeply through the age of sail, peaking at {{lists.peak19_n|int}} in {{lists.peak19_year|raw}}. Between 1850 and 1879 they average {{lists.high19_avg|int}} wrecks a year. Then they fall away: from 1890 to 1913 the average is just {{lists.dip_avg|int}}. Ships did become safer as sail gave way to steam, but much of that drop is in the record, not the sea: the newspaper runs that editors worked through simply thin out.</p>
+<p>Then come the wars. The First World War averages {{lists.ww1_avg|int}} wrecks a year, {{lists.ww1_vs_dip|f1}} times the years before it, with {{lists.y1917|int}} in 1917, the year of unrestricted submarine warfare. The Second World War averages {{lists.ww2_avg|int}} a year, {{lists.ww2_vs_inter|f1}} times the interwar rate, with {{lists.y1942|int}} in 1942 and {{lists.peak_n|int}} in {{lists.peak_year|raw}}, the highest of any year. {{lists.war_ww2_pct|pc}} of the Second World War entries were lost to war: torpedoes, bombs from aircraft, mines and gunfire. Since 1966 the lists hold about {{lists.modern_avg|int}} wrecks a year.</p>
+<div class="figure"><p class="fig-h">Shipwrecks listed on Wikipedia, per year, 1700 to 2025</p><p class="fig-sub">{{lists.dated|int}} entries with a year. Colour by cause or by flag. Shaded: the two world wars. Hover a bar.</p>
+<div class="controls"><div class="scrollrow" id="listRow"><span class="ctl-l">Colour</span><button class="btn" data-l="cause" aria-pressed="true">Cause</button><button class="btn" data-l="flag" aria-pressed="false">Flag</button><button class="btn" data-l="share" aria-pressed="false">Cause, as a share</button></div></div>
+<div class="chart" id="listChart"></div><div class="legend" id="listLegend"></div></div>
+<div class="note"><h3>What this timeline counts</h3><p>It counts wrecks that made it into Wikipedia's lists, not all wrecks. The lists are compiled by volunteers from whatever sources they can reach, and for the nineteenth century that means mostly British newspapers and Lloyd's List: {{lists.uk_c19_pct|pc}} of the 1800s entries are British ships. Losses of small craft, of ships from countries without such a press, and of anything after the 1880s newspaper runs are far less complete. Read the height of the bars as "how much was recorded and found", and compare the shapes within a period rather than across them.</p></div>
+<p>Most nineteenth-century wrecks were not dramatic: {{lists.c19_aground_pct|pc}} of them ran aground or were driven ashore, and {{lists.c19_founder_pct|pc}} foundered at sea. Over the whole period the lists record a cause for {{lists.cause_known_pct|pc}} of entries.</p>
+<div class="figure"><p class="fig-h">Why ships were lost</p><p class="fig-sub">All {{lists.dated|int}} dated list entries, by cause. Hover a bar.</p><div class="chart" id="causeChart"></div></div>
+
+<h2><span class="n">02 · Flags</span>British ships, then everyone's</h2>
+<p>Over the whole period {{lists.uk_pct|pc}} of the listed wrecks flew the British flag, then the United States ({{lists.flags.1.pct|pc1}}), Germany, France and Norway. The British share is highest in the 1800s ({{lists.uk_c19_pct|pc}}), which is partly the size of the British merchant fleet and partly the British sources. In the Second World War the mix is much wider: Britain falls to {{lists.uk_ww2_pct|pc}}, and German, Japanese, Italian and Soviet losses join the list. Switch the chart above to "Flag" to watch the change.</p>
+<div class="figure"><p class="fig-h">Listed wrecks by flag</p><p class="fig-sub">Flags grouped across regimes (for example the German Empire and Nazi Germany as Germany). Darker part: lost 1939 to 1945. Hover a bar.</p><div class="chart" id="flagChart"></div></div>
+
+<h2><span class="n">03 · The map</span>{{source.n|int}} wrecks with a place</h2>
+<p>Most list entries have no coordinates. The {{source.lists_points|int}} that do are mostly war losses, whose positions were logged at the time, so they spread across the North Atlantic, the Mediterranean, the North Sea and the Pacific. To them I add Wikidata's wrecks and the American charts. Press play to watch them accumulate; filter by cause, record and flag; and click any dot.</p>
+<div class="bleed" id="atlas">
+<div class="yearbox"><button class="btn play" id="play" aria-label="Play the years">▶ Play</button><span class="yv" id="y0v">2150 BC</span><div class="dual"><div class="track"></div><div class="fill" id="yfill"></div><input type="range" id="y0" min="0" max="1000" step="1" value="0" aria-label="From year"><input type="range" id="y1" min="0" max="1000" step="1" value="1000" aria-label="To year"></div><span class="yv" id="y1v">2026</span></div>
+<div class="controls">
+  <div class="scrollrow" id="yrRow"><span class="ctl-l">Years</span><button class="btn" data-y="-9999,9999">All</button><button class="btn" data-y="-9999,1799">Before 1800</button><button class="btn" data-y="1800,1913">1800 to 1913</button><button class="btn" data-y="1914,1918">1914 to 1918</button><button class="btn" data-y="1939,1945">1939 to 1945</button><button class="btn" data-y="1946,9999">1946 on</button></div>
+  <label class="btn" style="display:inline-flex;gap:6px;align-items:center"><input type="checkbox" id="undated" checked> Show undated wrecks</label>
+</div>
+<div class="controls"><div class="scrollrow" id="decRow"><span class="ctl-l">Decade</span></div></div>
+<div class="controls">
+  <div class="scrollrow" id="colRow"><span class="ctl-l">Colour</span><button class="btn" data-c="era" aria-pressed="true">Era</button><button class="btn" data-c="cause" aria-pressed="false">Cause</button><button class="btn" data-c="type" aria-pressed="false">Vessel</button><button class="btn" data-c="source" aria-pressed="false">Record</button></div>
+  <div class="scrollrow" id="viewRow"><span class="ctl-l">As</span><button class="btn" data-v="dots" aria-pressed="true">Dots</button><button class="btn" data-v="heat" aria-pressed="false">Density</button></div>
+</div>
+<div class="controls"><div class="scrollrow" id="causeRow"><span class="ctl-l">Cause</span></div></div>
+<div class="controls"><div class="scrollrow" id="typeRow"><span class="ctl-l">Vessel</span></div></div>
+<div class="controls">
+  <div class="scrollrow" id="srcRow"><span class="ctl-l">Record</span></div>
+  <label class="ctl-l" for="flagSel">Flag</label><select class="btn" id="flagSel" aria-label="Flag"></select>
+</div>
+<div class="controls">
+  <div class="searchbox"><input type="search" id="q" placeholder="Search a wreck, a place or a country" aria-label="Search a wreck, a place or a country" autocomplete="off"><ul class="suggest" id="sug" role="listbox"></ul></div>
+</div>
+<div class="controls"><div class="scrollrow" id="focusRow"><span class="ctl-l">Zoom to</span></div></div>
+<div class="mapgrid">
+  <div><div id="map" class="lmap" role="application" aria-label="Map of shipwrecks"></div>
+    <div class="legend" id="legend"></div></div>
+  <div class="side" id="side" aria-live="polite"></div>
+</div>
+<p class="src">Dots: {{source.n|int}} wrecks with a place. {{coverage.dated|int}} have a year of loss and follow the slider and decade buttons; the {{coverage.undated|int}} undated wrecks show only while "Show undated wrecks" is ticked, and play hides them. While playing, wrecks lost in the last three years are drawn larger. Pale rings with a number mark 20 or more wrecks recorded at exactly one spot. Causes and vessel types come from short descriptions and are not known for every wreck. Flags are shown for Wikipedia list entries and the "other" Wikidata wrecks; for the Scottish and Welsh imports Wikidata gives the country the wreck lies in, not the flag. Sources: Wikipedia contributors (CC BY-SA); Wikidata (CC0), including records imported from Canmore and Coflein; NOAA Office of Coast Survey, AWOIS. Outlines: Natural Earth. Base map tiles © Esri.</p>
+</div>
+<p>The map is lopsided in its own way. {{coverage.uk_pct|pc}} of the mapped wrecks lie in UK waters, {{coverage.scotland_pct|pc}} off Scotland, because Wikidata took in two bulk imports from Canmore and Coflein, the heritage records of Scotland and Wales. Scotland has {{coverage.england_per_scotland|f1}} times as many mapped wrecks as England, which certainly lost more ships. The United States has {{coverage.us_pct|pc}}, nearly all from its own wreck charts. Everywhere else together has {{coverage.rest_pct|pc}}.</p>
+<div class="figure"><p class="fig-h">Where the mapped wrecks come from</p><p class="fig-sub">All mapped wrecks and those with a year, by record. Hover a block.</p><div class="chart" id="srcChart"></div><div class="legend" id="srcLegend"></div></div>
+
+<h2><span class="n">04 · Graveyards</span>Where the wrecks crowd together</h2>
+<p>The densest wreck fields on the map are Scottish: the Firth of Clyde ({{gy.Firth of Clyde.n|int}} wrecks), the Firth of Forth ({{gy.Firth of Forth.n|int}}) and Orkney and Scapa Flow ({{gy.Orkney and Scapa Flow.n|int}}), where the German High Seas Fleet scuttled itself in 1919. The US coast of the Gulf of Mexico has {{gy.Gulf of Mexico, US coast.n|int}} and the English Channel, thanks largely to the wartime positions in the Wikipedia lists, {{gy.English Channel.n|int}}. Famous Pacific graveyards are still thin: Truk Lagoon, where a whole Japanese fleet lies on the bottom, has {{gy.Truk Lagoon.n|int}}, Ironbottom Sound off Guadalcanal {{gy.Ironbottom Sound.n|int}} and the Torres Strait {{gy.Torres Strait.n|int}}.</p>
+<div class="figure"><p class="fig-h">Named wreck graveyards</p><p class="fig-sub">Wrecks inside a simple box around each area. Click a row to zoom the map there.</p><div class="tablebox"><table class="tbl" id="gyTable"></table></div></div>
+<div class="figure"><p class="fig-h">What kind of vessel</p><p class="fig-sub">The {{types.known|int}} mapped wrecks whose type is recorded. Hover a bar.</p><div class="chart" id="typeChart"></div></div>
+
+<h2><span class="n">05 · Before 1700</span>From the Bronze Age to the Armada</h2>
+<p>The lists start in 1700, but Wikidata reaches much further back. The oldest dated wrecks are the Dokos wreck in Greece (about {{oldest.0.y|yr}}), the Uluburun ship off southern Turkey ({{oldest.1.y|yr}}), with its cargo of copper, tin and glass, and the Antikythera wreck ({{oldest.3.y|yr}}), famous for its mechanism. For antiquity a scholarly catalogue does better: the Summary Geodatabase of Shipwrecks from Harvard's Mapping Past Societies project, which builds on the Oxford Roman Economy Project, lists {{ancient.n_rows|int}} wrecks from 1500 BC to AD 1500. Spreading each over its date range, the busiest century is the {{ancient.peak_label|raw}}, with about {{ancient.peak_n|int}}: the height of Roman trade. I show it only as counts per century, because its licence is not stated in the copy I used.</p>
+<div class="figure"><p class="fig-h">Ancient and medieval wrecks per century</p><p class="fig-sub">Wrecks in the Summary Geodatabase of Shipwrecks with a date range of 300 years or less ({{ancient.n_used|int}}), each spread evenly over its range. Hover a bar.</p><div class="chart" id="ancChart"></div></div>
+<div class="figure"><p class="fig-h">The oldest dated wrecks</p><p class="fig-sub">Year of loss, and how I got it. Click a row to see it on the map.</p><div class="tablebox"><table class="tbl" id="oldTable"></table></div></div>
+<p class="pull">The timeline of shipwrecks is half a history of loss and half a history of the people who wrote the losses down.</p>
+
+<h2><span class="n">06 · How I did this</span>Methods and caveats</h2>
+<p><b>The lists.</b> A table scraped from every English Wikipedia "List of shipwrecks" page for 1700 to 2025 (monthly pages from the 1820s, yearly and decade pages before) gave {{lists.rows|int}} rows with page, date heading, ship, flag, a cause sorted into buckets and, for some, coordinates. I removed {{lists.dups|int}} duplicates of the same ship under the same date heading on the same page, keeping entries for unnamed vessels. Year pages for years that also have monthly pages hold only "Unknown date" entries, so they do not double count. {{lists.decade_only|int}} entries from the decade pages have no year and count only by decade. I grouped flags across regimes and spellings and causes into seven groups.</p>
+<p><b>Wikidata and NOAA.</b> Every Wikidata item with coordinates that is a shipwreck or has a shipwrecking event, through the QLever service ({{source.wd_mapped|int}} after removing aircraft, islands and items without coordinates), with extra event and date statements to find years of loss. NOAA's Automated Wreck and Obstruction Information System adds {{source.awois_kept|int}} wrecks in US waters. Wikipedia entries with coordinates that match a mapped wreck of the same name within 20 km ({{source.lists_points_dup|int}}) are not mapped twice.</p>
+<p><b>Years</b> for the map come from Wikidata dates and events, Canmore's labels for documented losses ("Unknown 1830"), dates after "sunk" in the American survey notes, and the list pages. I never guess a year from a launch date or a war. <b>Graveyards</b> are simple boxes. <b>Places</b>: each wreck is given its nearest present-day country (Natural Earth).</p>
+<p><b>What this is not.</b> It is not a count of all shipwrecks. UNESCO's oft-quoted estimate is of the order of three million wrecks on the sea bed. The timeline counts what volunteers have found in surviving sources, which favours British ships, the nineteenth century and wartime; the map counts what agencies and volunteers have published with coordinates. Depth is not recorded for most wrecks, so I do not attempt a list of the deepest.</p>
+<details><summary>Sources and licences</summary>
+<ul>
+<li>Wikipedia contributors, "List of shipwrecks" pages, 1700 to 2025 (https://en.wikipedia.org/wiki/Lists_of_shipwrecks), CC BY-SA 4.0. The structured table derived from them (data/wiki_list_wrecks.csv.gz) is shared under CC BY-SA 4.0; retrieved {{meta.retrieved|raw}}.</li>
+<li>Wikidata (https://www.wikidata.org/), CC0, queried through QLever (https://qlever.cs.uni-freiburg.de/). Many records were imported from Canmore (Historic Environment Scotland) and Coflein (Royal Commission on the Ancient and Historical Monuments of Wales).</li>
+<li>NOAA Office of Coast Survey, Automated Wreck and Obstruction Information System (AWOIS), wrecks layer; US Government work, public domain. Copy from https://github.com/jalbertbowden/AWOIS-data.</li>
+<li>Summary Geodatabase of Shipwrecks 1500 BCE to 1500 CE (Harvard Mapping Past Societies, incorporating the Oxford Roman Economy Project database after Parker and Strauss), via https://github.com/austinw8/ancient_shipwrecks; used for counts per century only.</li>
+<li>Natural Earth countries, admin-1 units and populated places (public domain). Base map tiles © Esri.</li>
+</ul></details>
+
+<div class="cta"><a class="p" href="https://doi.org/10.5281/zenodo.23850289">Read the paper</a><a href="https://github.com/Tristan-Hotham/world-shipwrecks">Data and code</a><a href="https://blog.tristanhotham.com/2026/10/31/world-shipwrecks/">Blog post</a></div>
+
+<footer>
+<p>Dr Tristan Hotham, Independent researcher. ORCID <a href="https://orcid.org/0000-0003-4931-9349">0000-0003-4931-9349</a>.</p>
+<p>Cite as: Hotham, T. (2026) Shipwrecks of the world, and how many over time: three centuries of recorded losses. Zenodo. <a href="https://doi.org/10.5281/zenodo.23850289">https://doi.org/10.5281/zenodo.23850289</a></p>
+<p>Data: Wikipedia contributors (CC BY-SA 4.0), Wikidata (CC0), NOAA Office of Coast Survey (public domain), Natural Earth. Licence: text and figures CC BY 4.0, the derived Wikipedia list table CC BY-SA 4.0, other derived data CC BY 4.0, code MIT.</p>
+<p>I wrote the text, with drafting and editing assistance from Claude (Anthropic), which also helped prepare the analysis code. I reviewed and checked all text and results.</p>
+</footer>
+</div>
+<div class="tip" id="tip"></div>
+<button class="btn theme" id="theme" aria-label="Toggle dark mode">◐</button>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+const R = /*RESULTS*/;
+const SITE = /*SITE*/;
+const WORLD = /*WORLD*/;
+const CITIES = /*CITIES*/;
+const fmt = n => n == null || n === "" ? "n/a" : Math.round(n).toLocaleString("en-GB");
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const yr = y => y == null ? "not dated" : y < 0 ? (-y) + " BC" : String(y);
+const tip = document.getElementById("tip");
+function showTip(h, x, y) { tip.innerHTML = h; tip.style.display = "block"; const w = tip.offsetWidth; x = Math.max(w / 2 + 8, Math.min(innerWidth - w / 2 - 8, x)); tip.style.left = x + scrollX + "px"; tip.style.top = y + scrollY + "px"; }
+function hideTip() { tip.style.display = "none"; }
+document.addEventListener("click", hideTip);
+const NS = "http://www.w3.org/2000/svg";
+const el = (t, a, p) => { const e = document.createElementNS(NS, t); for (const k in a) e.setAttribute(k, a[k]); if (p) p.appendChild(e); return e; };
+const lbl = (svg, x, y, s, cls = "lab", anchor = "start") => { const t = el("text", { x, y, class: cls, "text-anchor": anchor }, svg); t.textContent = s; return t; };
+const redraws = [];
+function resp(box, render) { let last = 0; const go = force => { const w = Math.max(280, Math.round(box.clientWidth)); if (!force && Math.abs(w - last) < 4) return; last = w; box.innerHTML = ""; render(w, w < 560); }; new ResizeObserver(() => go()).observe(box); go(); redraws.push(() => go(true)); }
+const isDark = () => { const r = document.documentElement; return r.dataset.theme ? r.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches; };
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const small = () => innerWidth < 900;
+const ERAS = SITE.eras, CAUSES = SITE.causes, TYPES = SITE.types, SOURCES = SITE.sources, FLAGS = SITE.flags;
+const UND = ERAS.length - 1;
+const eraOf = y => { if (y == null) return UND; for (let i = 0; i < UND; i++) if (y >= ERAS[i][2] && y <= ERAS[i][3]) return i; return UND; };
+const SRCC = SOURCES.map(s => s[1]);
+const wpTitle = t => (t || "").replace(/\((\w+)-(\w+)\)$/, "($1\u2013$2)");   // split-year pages use an en dash in their titles
+const link = p => p[6] === 4 ? `Wikipedia: <a href="https://en.wikipedia.org/wiki/${encodeURIComponent(wpTitle(p[10]).replace(/ /g, "_"))}" target="_blank" rel="noopener">${esc(p[10] || "list of shipwrecks")}</a>` : p[8][0] === "Q" ? `<a href="https://www.wikidata.org/wiki/${p[8]}" target="_blank" rel="noopener">Wikidata ${p[8]}</a>` : `NOAA AWOIS record ${p[8].slice(1)} (<a href="https://nauticalcharts.noaa.gov/data/wrecks-and-obstructions.html" target="_blank" rel="noopener">about AWOIS</a>)`;
+
+/* hero mark: a wrecked hull on the sea bed */
+(function () {
+  const g = document.getElementById("heroMark");
+  el("path", { d: "M8 30 Q30 24 52 30 T96 30 T120 30", fill: "none", stroke: "#2F7FB8", "stroke-width": 3 }, g);
+  el("path", { d: "M8 44 Q30 38 52 44 T96 44", fill: "none", stroke: "#2F7FB8", "stroke-width": 2, opacity: .5 }, g);
+  el("path", { d: "M10 108 L112 108", stroke: "currentColor", "stroke-width": 3 }, g);
+  el("path", { d: "M22 104 L34 82 L96 74 L104 94 Z", fill: "#B3202A", stroke: "currentColor", "stroke-width": 2.4, "stroke-linejoin": "round" }, g);
+  el("path", { d: "M58 78 L52 50", stroke: "currentColor", "stroke-width": 3, "stroke-linecap": "round" }, g);
+  el("path", { d: "M80 75 L84 58", stroke: "currentColor", "stroke-width": 3, "stroke-linecap": "round" }, g);
+  [[40, 64, 3], [46, 54, 2.2], [42, 44, 1.6]].forEach(([x, y, r]) => el("circle", { cx: x, cy: y, r, fill: "none", stroke: "currentColor", "stroke-width": 1.4 }, g));
+})();
+
+/* ---------- map machinery ---------- */
+const ESRI = "https://server.arcgisonline.com/ArcGIS/rest/services/";
+const ESRI_ATT = 'Tiles &copy; Esri, GEBCO, NOAA, National Geographic, Garmin, HERE, Geonames.org, and other contributors';
+const LYDEF = { base: "ocean", hills: true, hillK: 40, labels: true, labelK: 70, names: true, nameLvl: 1, cnames: false, borders: true, size: 2.5, boxes: false };
+const LY = { ...LYDEF };
+try { Object.assign(LY, JSON.parse(localStorage.getItem("wreck_layers") || "{}")); } catch (e) {}
+const saveLY = () => { try { localStorage.setItem("wreck_layers", JSON.stringify(LY)); } catch (e) {} };
+const HOME = () => small() ? [[35, -20], 1] : [[38, -20], 2];
+const map = L.map("map", { minZoom: 1, maxZoom: 14, maxBounds: [[-88, -220], [88, 220]], zoomSnap: .5, worldCopyJump: false }).setView(...HOME());
+["hills:250", "fill:400", "labels:450", "pts:600", "names:620"].forEach(s => { const [n, z] = s.split(":"); map.createPane(n); map.getPane(n).style.zIndex = z; });
+["hills", "labels", "names", "pts", "fill"].forEach(n => map.getPane(n).style.pointerEvents = "none");
+let base = null, hills = null, labels = null; const names = L.layerGroup(), cnames = L.layerGroup(), boxes = L.layerGroup();
+function setTiles() {
+  [base, labels, hills].forEach(l => { if (l) map.removeLayer(l); });
+  const t = isDark() ? "Dark" : "Light";
+  const url = LY.base === "ocean" ? ESRI + "Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}" : LY.base === "relief" ? ESRI + "World_Shaded_Relief/MapServer/tile/{z}/{y}/{x}" : LY.base === "satellite" ? ESRI + "World_Imagery/MapServer/tile/{z}/{y}/{x}" : `${ESRI}Canvas/World_${t}_Gray_Base/MapServer/tile/{z}/{y}/{x}`;
+  base = L.tileLayer(url, { maxZoom: 16, maxNativeZoom: LY.base === "relief" ? 13 : LY.base === "ocean" ? 13 : 16, attribution: ESRI_ATT }).addTo(map);
+  hills = L.tileLayer(ESRI + "Elevation/World_Hillshade/MapServer/tile/{z}/{y}/{x}", { maxZoom: 16, maxNativeZoom: 16, pane: "hills" });
+  labels = L.tileLayer(LY.base === "ocean" ? ESRI + "Ocean/World_Ocean_Reference/MapServer/tile/{z}/{y}/{x}" : `${ESRI}Canvas/World_${t}_Gray_Reference/MapServer/tile/{z}/{y}/{x}`, { maxZoom: 16, maxNativeZoom: 13, pane: "labels" });
+  applyLayers();
+}
+function applyLayers() {
+  if (!base) return;
+  if (LY.hills) { hills.addTo(map); hills.setOpacity(Math.min(1, .1 + LY.hillK / 120)); } else map.removeLayer(hills);
+  if (LY.labels) { labels.addTo(map); labels.setOpacity(LY.labelK / 100); } else map.removeLayer(labels);
+  if (LY.names) names.addTo(map); else map.removeLayer(names);
+  if (LY.cnames) cnames.addTo(map); else map.removeLayer(cnames);
+  if (LY.boxes) boxes.addTo(map); else map.removeLayer(boxes);
+  cLayer.setStyle(cStyle); placeNames(); dots.draw();
+}
+function placeNames() {
+  names.clearLayers(); cnames.clearLayers();
+  const z = map.getZoom(), bb = map.getBounds().pad(.05); const bxs = [];
+  if (LY.names) {
+    const minPop = [[2, 8e6], [3, 3e6], [4, 1e6], [5, 4e5], [6, 1.5e5], [7, 6e4], [99, 2e4]].find(([zz]) => z < zz + (LY.nameLvl === 2 ? 1.5 : LY.nameLvl === 0 ? -1 : 0))[1] * (LY.nameLvl === 0 ? 2 : 1);
+    let n = 0;
+    for (const c of CITIES) {
+      if (c.pop < minPop || !bb.contains([c.lat, c.lon])) continue;
+      const pt = map.latLngToContainerPoint([c.lat, c.lon]), big = c.pop >= 5e6;
+      const bx = [pt.x - 4, pt.y - 8, pt.x + 10 + c.name.length * (big ? 6.9 : 6.3), pt.y + 7];
+      if (bxs.some(o => bx[0] < o[2] && bx[2] > o[0] && bx[1] < o[3] && bx[3] > o[1])) continue;
+      bxs.push(bx); L.marker([c.lat, c.lon], { pane: "names", interactive: false, keyboard: false, icon: L.divIcon({ className: "cityL" + (big ? "" : " s"), html: `<i></i>${esc(c.name)}`, iconSize: null, iconAnchor: [3, 6] }) }).addTo(names);
+      if (++n >= 120) break;
+    }
+  }
+  if (LY.cnames && z >= 3 && z < 7) {
+    WORLD.features.forEach(f => { const g = SITE.cpos[f.properties.iso]; if (!g || !bb.contains([g[1], g[0]])) return; const nm = SITE.cname[f.properties.iso] || "";
+      if (z < 4 && (g[2] || 0) < 2e7) return; const pt = map.latLngToContainerPoint([g[1], g[0]]), w = nm.length * 7.2;
+      const bx = [pt.x - w / 2, pt.y - 7, pt.x + w / 2, pt.y + 7]; if (bxs.some(o => bx[0] < o[2] && bx[2] > o[0] && bx[1] < o[3] && bx[3] > o[1])) return; bxs.push(bx);
+      L.marker([g[1], g[0]], { pane: "names", interactive: false, keyboard: false, icon: L.divIcon({ className: "cntL", html: esc(nm), iconSize: [w, 14], iconAnchor: [w / 2, 7] }) }).addTo(cnames); });
+  }
+}
+(function layerControl() {
+  const Ctl = L.Control.extend({ options: { position: "topright" }, onAdd() {
+    const d = L.DomUtil.create("div"); L.DomEvent.disableClickPropagation(d); L.DomEvent.disableScrollPropagation(d);
+    d.innerHTML = `<button class="lyrBtn" aria-expanded="false">Map layers</button>
+<div class="lyrPanel" hidden>
+ <div class="row"><label style="font-weight:600">Base map</label><div class="sub"><select data-k="base" aria-label="Base map"><option value="ocean">Sea depth (bathymetry)</option><option value="plain">Plain grey</option><option value="relief">Shaded relief</option><option value="satellite">Satellite</option></select></div></div>
+ <div class="row"><label><input type="checkbox" data-k="hills"> Hill shading</label><div class="sub"><span>strength</span><input type="range" data-k="hillK" min="10" max="100" step="5" aria-label="Hill shading strength"></div></div>
+ <div class="row"><label><input type="checkbox" data-k="labels"> Sea and place labels</label><div class="sub"><span>strength</span><input type="range" data-k="labelK" min="20" max="100" step="5" aria-label="Map label strength"></div></div>
+ <div class="row"><label><input type="checkbox" data-k="names"> Bold town names</label><div class="sub"><span>how many</span><select data-k="nameLvl" aria-label="How many town names"><option value="0">Biggest only</option><option value="1">Some</option><option value="2">Lots</option></select></div></div>
+ <div class="row"><label><input type="checkbox" data-k="cnames"> Country names</label></div>
+ <div class="row"><label><input type="checkbox" data-k="borders"> Borders</label></div>
+ <div class="hd">Wrecks</div>
+ <div class="row"><label style="font-weight:600">Dot size</label><div class="sub"><span>size</span><input type="range" data-k="size" min="1" max="6" step=".5" aria-label="Dot size"></div></div>
+ <div class="row"><label><input type="checkbox" data-k="boxes"> Graveyard boxes</label></div>
+ <button class="reset">Reset layers</button>
+</div>`;
+    return d; } });
+  map.addControl(new Ctl());
+  const box = map.getContainer(), btn = box.querySelector(".lyrBtn"), pan = box.querySelector(".lyrPanel");
+  btn.onclick = () => { const o = pan.hidden; pan.hidden = !o; btn.setAttribute("aria-expanded", o); };
+  const sync = () => pan.querySelectorAll("[data-k]").forEach(i => { const k = i.dataset.k; if (i.type === "checkbox") i.checked = LY[k]; else i.value = LY[k]; });
+  pan.querySelectorAll("[data-k]").forEach(i => i.addEventListener(i.type === "range" ? "input" : "change", () => {
+    const k = i.dataset.k; LY[k] = i.type === "checkbox" ? i.checked : (k === "base" ? i.value : +i.value);
+    if (k === "hillK") LY.hills = true; if (k === "labelK") LY.labels = true; if (k === "nameLvl") LY.names = true;
+    sync(); saveLY(); if (k === "base") setTiles(); else applyLayers(); legend();
+  }));
+  pan.querySelector(".reset").onclick = () => { Object.assign(LY, LYDEF); saveLY(); sync(); setTiles(); legend(); };
+  sync();
+})();
+const Badge = L.Control.extend({ options: { position: "topleft" }, onAdd() { const d = L.DomUtil.create("div", "yearBadge"); d.id = "badge"; return d; } });
+map.addControl(new Badge());
+const Note = L.Control.extend({ options: { position: "bottomleft" }, onAdd() { const d = L.DomUtil.create("div", "mapnote"); d.id = "mapnote"; L.DomEvent.disableClickPropagation(d); return d; } });
+map.addControl(new Note());
+L.control.scale({ imperial: false, position: "bottomright" }).addTo(map);
+R.graveyards.forEach(g => { const b = g.box;
+  L.rectangle([[b[1], b[0]], [b[3], b[2]]], { pane: "fill", color: "#B3202A", weight: 1.4, dashArray: "5 4", fill: false, interactive: false }).addTo(boxes);
+  L.marker([b[3], b[0]], { pane: "names", interactive: false, icon: L.divIcon({ className: "boxL", html: esc(g.name) + " · " + fmt(g.n), iconSize: null, iconAnchor: [-4, -4] }) }).addTo(boxes); });
+
+/* ---------- state ---------- */
+const YMIN = -2150, YMAX = 2026;
+const S = { col: "era", view: "dots", y0: YMIN, y1: YMAX, und: true, cause: new Set(CAUSES.map((c, i) => i)), type: new Set(TYPES.map((t, i) => i)), src: new Set(SOURCES.map((s, i) => i)), flag: -1, met: null, playing: false };
+
+/* countries: outline only */
+function cStyle() { return { color: css("--border") || "#999", weight: LY.borders ? .6 : 0, fillColor: css("--land"), fillOpacity: 0, interactive: false }; }
+const cLayer = L.geoJSON(WORLD, { pane: "fill", style: cStyle, interactive: false }).addTo(map);
+
+/* ---------- wreck dots and density on one canvas ---------- */
+let P = null, Z = -1, XY = null, VIS = new Int32Array(0), NV = 0, CNT = { n: 0, d: 0, e: [] };
+const keep = p => S.src.has(p[6]) && S.cause.has(p[3]) && S.type.has(p[4]) && (S.flag < 0 || p[5] === S.flag) && (p[2] == null ? S.und : p[2] >= S.y0 && p[2] <= S.y1);
+const colOf = p => S.col === "cause" ? CAUSES[p[3]][1] : S.col === "type" ? TYPES[p[4]][1] : S.col === "source" ? SRCC[p[6]] : ERAS[eraOf(p[2])][1];
+const Dots = L.Layer.extend({
+  onAdd(m) { this._c = L.DomUtil.create("canvas", "dotcanvas"); m.getPane("pts").appendChild(this._c); m.on("moveend zoomend resize viewreset", this._reset, this); m.on("zoomstart", () => this._c.style.opacity = 0); this._reset(); },
+  onRemove(m) { L.DomUtil.remove(this._c); m.off("moveend zoomend resize viewreset", this._reset, this); },
+  _reset() { const s = map.getSize(), d = devicePixelRatio || 1; L.DomUtil.setPosition(this._c, map.containerPointToLayerPoint([0, 0])); this._c.width = s.x * d; this._c.height = s.y * d; this._c.style.width = s.x + "px"; this._c.style.height = s.y + "px"; this._c.style.opacity = 1; this.draw(); },
+  draw() {
+    if (!this._c) return; const ctx = this._c.getContext("2d"), d = devicePixelRatio || 1; ctx.setTransform(d, 0, 0, d, 0, 0); ctx.clearRect(0, 0, this._c.width, this._c.height); NV = 0;
+    if (!P) return;
+    const z = map.getZoom(); if (z !== Z) { Z = z; XY = new Float32Array(P.length * 2); P.forEach((p, i) => { const q = map.project([p[0], p[1]], z); XY[2 * i] = q.x; XY[2 * i + 1] = q.y; }); VIS = new Int32Array(P.length); }
+    const o = map.getPixelOrigin(), off = map.containerPointToLayerPoint([0, 0]), ox = o.x + off.x, oy = o.y + off.y, sz = map.getSize();
+    const r0 = LY.size * (z < 3 ? .8 : z < 5 ? 1 : z < 7 ? 1.3 : 1.7), dark = isDark();
+    const rim = dark ? "rgba(0,0,0,.6)" : "rgba(255,255,255,.85)";
+    CNT = { n: 0, d: 0, e: ERAS.map(() => 0) };
+    const recent = [];
+    for (let i = 0; i < P.length; i++) {
+      const p = P[i]; if (!keep(p)) continue;
+      CNT.n++; if (p[2] != null) CNT.d++; CNT.e[eraOf(p[2])]++;
+      const x = XY[2 * i] - ox, yy = XY[2 * i + 1] - oy; if (x < -20 || yy < -20 || x > sz.x + 20 || yy > sz.y + 20) continue;
+      VIS[NV++] = i;
+    }
+    if (S.view === "heat") {
+      const cs = z < 3 ? 8 : 12, nx = Math.ceil(sz.x / cs), ny = Math.ceil(sz.y / cs), G = new Float32Array(nx * ny);
+      for (let k = 0; k < NV; k++) { const i = VIS[k], gx = Math.floor((XY[2 * i] - ox) / cs), gy = Math.floor((XY[2 * i + 1] - oy) / cs); if (gx >= 0 && gy >= 0 && gx < nx && gy < ny) G[gy * nx + gx]++; }
+      let mx = 1; for (const v of G) if (v > mx) mx = v;
+      const ramp = [[255, 236, 179], [253, 174, 97], [227, 92, 40], [160, 32, 40], [70, 10, 50]];
+      for (let gy = 0; gy < ny; gy++) for (let gx = 0; gx < nx; gx++) { const v = G[gy * nx + gx]; if (!v) continue;
+        const t = Math.log(1 + v) / Math.log(1 + mx), s = t * (ramp.length - 1), a = Math.min(ramp.length - 2, Math.floor(s)), u = s - a, c = ramp[a].map((x, j) => Math.round(x + (ramp[a + 1][j] - x) * u));
+        ctx.fillStyle = `rgba(${c},${.55 + .4 * t})`; ctx.fillRect(gx * cs, gy * cs, cs - 1, cs - 1); }
+      return;
+    }
+    ctx.lineWidth = .5; ctx.strokeStyle = rim;
+    for (let k = 0; k < NV; k++) { const i = VIS[k], p = P[i];
+      if (S.playing && p[2] != null && p[2] > S.y1 - 3) { recent.push(i); continue; }
+      const r = p[2] == null ? r0 * .75 : r0 * (p[9] > 0 ? 1.35 : 1); ctx.beginPath(); ctx.arc(XY[2 * i] - ox, XY[2 * i + 1] - oy, r, 0, 7); ctx.fillStyle = colOf(p); ctx.globalAlpha = p[2] == null && S.col === "era" ? .6 : .88; ctx.fill(); ctx.globalAlpha = 1; if (r >= 2.5) ctx.stroke(); }
+    // stacks: many wrecks logged at one point; ring area grows with the count
+    const ST = new Map();
+    for (let k = 0; k < NV; k++) { const i = VIS[k], p = P[i], key = p[0] + "," + p[1]; const s = ST.get(key); if (s) s.n++; else ST.set(key, { n: 1, i }); }
+    ctx.font = "500 11px 'IBM Plex Mono', monospace"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    for (const s of ST.values()) { if (s.n < 20) continue; const x = XY[2 * s.i] - ox, yy = XY[2 * s.i + 1] - oy, r = 4 + 3 * Math.log2(s.n / 10); const sc = dark ? "#cfd6de" : "#5a6470";
+      ctx.beginPath(); ctx.arc(x, yy, r, 0, 7); ctx.fillStyle = sc; ctx.globalAlpha = .18; ctx.fill(); ctx.globalAlpha = 1; ctx.strokeStyle = sc; ctx.lineWidth = 1.2; ctx.stroke();
+      if (z >= 6 || (z >= 4 && s.n >= 60)) { const t = String(s.n); ctx.lineWidth = 3; ctx.strokeStyle = dark ? "#000" : "#fff"; ctx.strokeText(t, x, yy - r - 7); ctx.fillStyle = dark ? "#fff" : "#1D2128"; ctx.fillText(t, x, yy - r - 7); } }
+    ctx.strokeStyle = dark ? "#fff" : "#1D2128"; ctx.lineWidth = 1;
+    for (const i of recent) { const p = P[i]; ctx.beginPath(); ctx.arc(XY[2 * i] - ox, XY[2 * i + 1] - oy, r0 * 2.1, 0, 7); ctx.fillStyle = colOf(p); ctx.fill(); ctx.stroke(); }
+    if (S.met != null) { const i = S.met; const x = XY[2 * i] - ox, yy = XY[2 * i + 1] - oy; ctx.beginPath(); ctx.arc(x, yy, r0 + 6, 0, 7); ctx.strokeStyle = dark ? "#fff" : "#000"; ctx.lineWidth = 2.2; ctx.stroke(); }
+  }
+});
+const dots = new Dots().addTo(map);
+function hitDot(cp) {
+  if (!P || !NV || S.view === "heat") return -1; const o = map.getPixelOrigin(), off = map.containerPointToLayerPoint([0, 0]), ox = o.x + off.x, oy = o.y + off.y;
+  let best = -1, bd = 81; for (let k = 0; k < NV; k++) { const i = VIS[k], dx = XY[2 * i] - ox - cp.x, dy = XY[2 * i + 1] - oy - cp.y, d = dx * dx + dy * dy - (P[i][2] != null ? 4 : 0) - (P[i][9] > 0 ? 6 : 0); if (d < bd) { bd = d; best = i; } }
+  return best;
+}
+const wtip = i => { const p = P[i]; return `<b>${esc(p[7])}</b><br>${yr(p[2])} · ${esc(TYPES[p[4]][0].toLowerCase())}`; };
+map.on("click", e => { const h = hitDot(e.containerPoint); if (h >= 0) pickWreck(h, false); });
+map.on("mousemove", e => { const h = hitDot(e.containerPoint); map.getContainer().style.cursor = h >= 0 ? "pointer" : ""; if (h >= 0) { const r = map.getContainer().getBoundingClientRect(); showTip(wtip(h), r.left + e.containerPoint.x, r.top + e.containerPoint.y); } else hideTip(); });
+map.on("mouseout", hideTip);
+fetch("data/points.json").then(r => r.json()).then(j => { P = j.rows; Z = -1; dots.draw(); side(); legend(); });
+
+/* ---------- controls ---------- */
+const y0 = document.getElementById("y0"), y1 = document.getElementById("y1");
+// slider: first 12% covers 2150 BC to 1500, next 18% 1500 to 1800, the rest 1800 to 2026
+const YS = v => { const t = v / 1000; return Math.round(t < .12 ? YMIN + (1500 - YMIN) * t / .12 : t < .3 ? 1500 + 300 * (t - .12) / .18 : 1800 + (YMAX - 1800) * (t - .3) / .7); };
+const SY = y => y <= 1500 ? (y - YMIN) / (1500 - YMIN) * 120 : y <= 1800 ? 120 + (y - 1500) / 300 * 180 : 300 + (y - 1800) / (YMAX - 1800) * 700;
+function setYears(a, b, fromSlider) {
+  S.y0 = Math.max(YMIN, Math.min(a, b)); S.y1 = Math.min(YMAX, Math.max(a, b));
+  if (!fromSlider) { y0.value = SY(S.y0); y1.value = SY(S.y1); }
+  document.getElementById("y0v").textContent = yr(S.y0); document.getElementById("y1v").textContent = yr(S.y1);
+  const f = document.getElementById("yfill"), a0 = Math.min(+y0.value, +y1.value) / 10, b0 = Math.max(+y0.value, +y1.value) / 10; f.style.left = a0 + "%"; f.style.width = (b0 - a0) + "%";
+  document.querySelectorAll("#yrRow .btn").forEach(x => { const [p, q] = x.dataset.y.split(",").map(Number); x.setAttribute("aria-pressed", Math.max(YMIN, p) === S.y0 && Math.min(YMAX, q) === S.y1); });
+  dots.draw(); side(); badge();
+}
+[y0, y1].forEach(i => i.addEventListener("input", () => { stop(); setYears(YS(+y0.value), YS(+y1.value), true); }));
+document.querySelectorAll("#yrRow .btn").forEach(b => b.onclick = () => { stop(); const [p, q] = b.dataset.y.split(",").map(Number); setYears(p, q); });
+const press = (row, b) => document.querySelectorAll(row + " .btn").forEach(x => x.setAttribute("aria-pressed", x === b));
+document.querySelectorAll("#viewRow .btn").forEach(b => b.onclick = () => { S.view = b.dataset.v; press("#viewRow", b); dots.draw(); legend(); });
+document.querySelectorAll("#colRow .btn").forEach(b => b.onclick = () => { S.col = b.dataset.c; press("#colRow", b); dots.draw(); legend(); });
+document.getElementById("undated").onchange = e => { S.und = e.target.checked; dots.draw(); side(); };
+function filterRow(id, list, key) {
+  const row = document.getElementById(id);
+  const all = document.createElement("button"); all.className = "btn"; all.textContent = "All"; all.setAttribute("aria-pressed", "true"); row.appendChild(all);
+  const bs = list.map(([n, c], i) => { const b = document.createElement("button"); b.className = "btn"; b.innerHTML = `<i style="background:${c}"></i>${esc(n)}`; b.setAttribute("aria-pressed", "false"); b.dataset.g = i; row.appendChild(b); return b; });
+  const sync = () => { const allOn = S[key].size === list.length; all.setAttribute("aria-pressed", allOn); bs.forEach(b => b.setAttribute("aria-pressed", !allOn && S[key].has(+b.dataset.g))); dots.draw(); side(); };
+  all.onclick = () => { S[key] = new Set(list.map((g, i) => i)); sync(); };
+  bs.forEach(b => b.onclick = () => { const g = +b.dataset.g; if (S[key].size === list.length) S[key] = new Set([g]); else if (S[key].has(g)) { S[key].delete(g); if (!S[key].size) S[key] = new Set(list.map((x, i) => i)); } else S[key].add(g); sync(); });
+  return () => { S[key] = new Set(list.map((g, i) => i)); sync(); };
+}
+const resetCause = filterRow("causeRow", CAUSES, "cause"), resetType = filterRow("typeRow", TYPES, "type"), resetSrc = filterRow("srcRow", SOURCES, "src");
+(function flagSel() { const s = document.getElementById("flagSel"); s.innerHTML = `<option value="-1">Any flag</option>` + FLAGS.map((f, i) => `<option value="${i}">${esc(f)}</option>`).join("");
+  s.onchange = () => { S.flag = +s.value; if (S.flag >= 0 && S.flag !== FLAGS.length - 1) { S.src = new Set([2, 4]); document.querySelectorAll('#srcRow .btn').forEach(b => b.setAttribute("aria-pressed", b.dataset.g === "2" || b.dataset.g === "4")); } dots.draw(); side(); }; })();
+
+(function decRow() {
+  const row = document.getElementById("decRow");
+  for (let d = 1700; d <= 2020; d += 10) { const b = document.createElement("button"); b.className = "btn"; b.textContent = d + "s"; b.dataset.d = d;
+    b.onclick = () => { stop(); setYears(d, d + 9); document.querySelectorAll("#decRow .btn").forEach(x => x.setAttribute("aria-pressed", x === b)); }; row.appendChild(b); }
+})();
+
+/* ---------- play ---------- */
+let timer = null;
+function badge() { const b = document.getElementById("badge"); if (!S.playing) { b.innerHTML = ""; return; } b.innerHTML = `${yr(S.y1)}<small>${fmt(CNT.d)} dated wrecks so far</small>`; }
+function stop() { if (timer) clearInterval(timer); timer = null; S.playing = false; document.getElementById("play").textContent = "▶ Play"; badge(); dots.draw(); }
+document.getElementById("play").onclick = () => {
+  if (S.playing) return stop();
+  S.playing = true; document.getElementById("play").textContent = "❚❚ Pause";
+  S.und = false; document.getElementById("undated").checked = false;
+  let y = S.y1 >= YMAX || S.y1 < 1700 ? 1700 : S.y1; setYears(YMIN, y);
+  timer = setInterval(() => { y += (y >= 1900 && y < 1960) ? 1 : 2; if (y > YMAX) { y = YMAX; setYears(YMIN, y); return stop(); } setYears(YMIN, y); }, 140);
+};
+
+/* ---------- legend, side panel ---------- */
+function legend() {
+  const e = document.getElementById("legend"); let h = "";
+  const L0 = S.col === "cause" ? CAUSES : S.col === "type" ? TYPES : S.col === "source" ? SOURCES : ERAS;
+  if (S.view === "heat") h += `<span>fewer</span><span class="ramp" style="background:linear-gradient(90deg,#FFECB3,#FDAE61,#E35C28,#A02028,#460A32)"></span><span>more wrecks per square</span>`;
+  else h += L0.map(x => `<span><i style="background:${x[1]}"></i>${esc(x[0])}</span>`).join("") + `<span><i style="background:transparent;border:1.5px solid var(--muted);width:18px;height:18px"></i>20 or more wrecks at one spot</span><span>larger dots: wrecks with a Wikipedia article</span>`;
+  e.innerHTML = h;
+}
+function note(h) { document.getElementById("mapnote").innerHTML = h || ""; }
+function side() {
+  const box = document.getElementById("side"); let h = "";
+  if (S.met != null && P) {
+    const p = P[S.met];
+    h = `<button class="back">Back</button><h4>${esc(SOURCES[p[6]][0])}</h4><div class="big">${esc(p[7])}</div><table>
+<tr><td>Year lost</td><td>${yr(p[2])}</td></tr><tr><td>Era</td><td>${esc(ERAS[eraOf(p[2])][0])}</td></tr><tr><td>Cause</td><td>${esc(CAUSES[p[3]][0])}</td></tr>
+<tr><td>Vessel</td><td>${esc(TYPES[p[4]][0])}</td></tr><tr><td>Flag</td><td>${p[6] === 2 || p[6] === 4 ? esc(FLAGS[p[5]]) : "not recorded"}</td></tr>
+<tr><td>Place</td><td>${p[0].toFixed(3)}, ${p[1].toFixed(3)}</td></tr>${p[9] ? `<tr><td>Wikipedia articles</td><td>${p[9]}</td></tr>` : ""}</table><p>${link(p)}</p>`;
+    let same = 0; for (const q of P) if (q[0] === p[0] && q[1] === p[1]) same++;
+    if (same > 1) h += `<p class="sub">${fmt(same)} wrecks in the record share exactly this point. Losses whose exact place is unknown are often logged at one point for a stretch of coast.</p>`;
+  } else {
+    h = `<h4>On the map now</h4><div class="big">${fmt(CNT.n)}</div><p class="sub">wrecks, ${yr(S.y0)} to ${yr(S.y1)}${S.und ? ", plus undated" : ""}</p><table>` +
+      ERAS.map((e, i) => `<tr><td><i style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${e[1]};margin-right:6px"></i>${esc(e[0])}</td><td class="num">${fmt(CNT.e[i])}</td></tr>`).join("") + `</table>`;
+    h += `<h4>Famous wrecks</h4><ul>` + ["Uluburun shipwreck", "Antikythera wreck", "Mary Rose", "Girona", "Batavia", "Titanic", "RMS Lusitania", "Bismarck", "USS Arizona (BB-39)", "SS Edmund Fitzgerald", "Costa Concordia"].map(n => `<li><span class="go" data-n="${esc(n)}">${esc(n)}</span> <small>${yr(R.spot[n].y)}</small></li>`).join("") + `</ul>`;
+    h += `<h4>Graveyards</h4><ul>` + R.graveyards.slice(0, 8).map((g, i) => `<li><span class="go" data-g="${i}">${esc(g.name)}</span> <small>${fmt(g.n)}</small></li>`).join("") + `</ul>`;
+    h += `<p class="sub">Press play to watch the dated wrecks accumulate. Click a dot for its record. Base map, hill shading and labels are under Map layers.</p>`;
+    note("");
+  }
+  box.innerHTML = h;
+  const b = box.querySelector(".back"); if (b) b.onclick = () => { S.met = null; map.closePopup(); dots.draw(); side(); };
+  box.querySelectorAll("[data-n]").forEach(e => e.onclick = () => byName(e.dataset.n));
+  box.querySelectorAll("[data-g]").forEach(e => e.onclick = () => goBox(R.graveyards[+e.dataset.g]));
+}
+function toMap() { if (small()) document.getElementById("map").scrollIntoView({ behavior: "smooth", block: "start" }); }
+function goBox(g) { const b = g.box; map.fitBounds([[b[1], b[0]], [b[3], b[2]]], { maxZoom: 9 }); if (!LY.boxes) { LY.boxes = true; applyLayers(); } toMap(); }
+function pickWreck(i, move) {
+  S.met = i; const p = P[i];
+  if (!keep(p)) { if (p[2] == null) { S.und = true; document.getElementById("undated").checked = true; } else if (p[2] < S.y0 || p[2] > S.y1) setYears(YMIN, YMAX); resetCause(); resetType(); resetSrc(); S.flag = -1; document.getElementById("flagSel").value = -1; }
+  if (move) { map.setView([p[0], p[1]], Math.max(map.getZoom(), 8)); toMap(); }
+  L.popup({ maxWidth: 280 }).setLatLng([p[0], p[1]]).setContent(`<b>${esc(p[7])}</b><br>${p[2] == null ? "Year of loss not recorded" : "Lost " + yr(p[2])}<br>${esc(CAUSES[p[3]][0])}<br>${esc(TYPES[p[4]][0])}${(p[6] === 2 || p[6] === 4) && p[5] < FLAGS.length - 1 ? " · " + esc(FLAGS[p[5]]) : ""}<br>${link(p)}`).openOn(map);
+  note(`<b>${esc(p[7])}</b>, ${yr(p[2])}`); dots.draw(); side();
+}
+function byName(n) { if (!P) return; let best = -1; for (let i = 0; i < P.length; i++) if (P[i][7] === n && (best < 0 || P[i][9] > P[best][9])) best = i; if (best >= 0) { stop(); document.getElementById("atlas").scrollIntoView({ behavior: "smooth" }); setTimeout(() => pickWreck(best, true), 250); } }
+(function focusRow() {
+  const row = document.getElementById("focusRow");
+  const F = [["World", null], ["British Isles", [[49.5, -11], [61, 2.5]]], ["Scapa Flow", [[58.75, -3.45], [59.0, -2.85]]], ["Firth of Forth", [[55.9, -3.8], [56.4, -2]]], ["North Wales", [[52.7, -5], [53.5, -3]]], ["Cape Hatteras", [[34.3, -76.6], [36.6, -74.6]]], ["New York", [[39.6, -74.6], [41, -72.5]]], ["Gulf of Mexico", [[24, -98], [31, -80]]], ["Great Lakes", [[41, -93], [49.5, -75.5]]], ["Baltic", [[53.5, 9], [66, 31]]], ["Mediterranean", [[30, -6], [46, 36]]], ["Western Australia", [[-36, 112], [-13, 129]]]];
+  F.forEach(([n, b]) => { const x = document.createElement("button"); x.className = "btn"; x.textContent = n; x.onclick = () => { if (!b) { S.met = null; map.closePopup(); map.setView(...HOME()); side(); } else map.fitBounds(b); toMap(); }; row.appendChild(x); });
+})();
+
+/* ---------- search: wrecks and countries ---------- */
+(function search() {
+  const inp = document.getElementById("q"), sug = document.getElementById("sug"); let opts = [], k = -1;
+  const norm = s => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+  const cn = Object.entries(SITE.cname);
+  function build(q) {
+    const nq = norm(q); if (nq.length < 2) return [];
+    const out = [];
+    cn.forEach(([iso, n]) => { if (norm(n).includes(nq)) out.push({ t: "c", n, iso, s: norm(n).startsWith(nq) ? 6 : 2 }); });
+    CITIES.forEach(c => { if (c.pop >= 50000 && norm(c.name).startsWith(nq)) out.push({ t: "p", n: c.name, c, s: 3 + Math.log10(c.pop) / 10 }); });
+    if (P) { let m = 0; for (let i = 0; i < P.length; i++) { const nm = norm(P[i][7]); if (nm.includes(nq)) { out.push({ t: "w", n: P[i][7], i, s: (nm === nq ? 8 : nm.startsWith(nq) ? 3 : 1) + Math.min(4, P[i][9] / 10) + (P[i][2] != null ? .5 : 0) }); if (++m > 800) break; } } }
+    return out.sort((a, b) => b.s - a.s).slice(0, 12);
+  }
+  const lab = o => o.t === "c" ? `${esc(o.n)} <span>country</span>` : o.t === "p" ? `${esc(o.n)} <span>place</span>` : `${esc(o.n)} <span>${yr(P[o.i][2])}, ${esc(SOURCES[P[o.i][6]][0].replace("Wikidata: ", "").replace("NOAA AWOIS: ", ""))}</span>`;
+  const show = () => { sug.innerHTML = opts.map((o, i) => `<li role="option" aria-selected="${i === k}" data-i="${i}">${lab(o)}</li>`).join(""); sug.style.display = opts.length ? "block" : "none"; };
+  const choose = o => { sug.style.display = "none"; inp.value = o.n; inp.blur(); stop();
+    if (o.t === "w") return pickWreck(o.i, true);
+    if (o.t === "p") { map.setView([o.c.lat, o.c.lon], 9); return toMap(); }
+    const f = WORLD.features.find(x => x.properties.iso === o.iso); if (f) map.fitBounds(L.geoJSON(f).getBounds(), { padding: [10, 10], maxZoom: 7 }); toMap(); };
+  inp.addEventListener("input", () => { opts = build(inp.value); k = -1; show(); });
+  inp.addEventListener("keydown", e => { if (e.key === "ArrowDown") { k = Math.min(opts.length - 1, k + 1); show(); e.preventDefault(); } else if (e.key === "ArrowUp") { k = Math.max(0, k - 1); show(); e.preventDefault(); } else if (e.key === "Enter" && opts.length) { choose(opts[Math.max(0, k)]); } else if (e.key === "Escape") { sug.style.display = "none"; } });
+  sug.addEventListener("click", e => { const li = e.target.closest("li"); if (li) choose(opts[+li.dataset.i]); });
+  document.addEventListener("click", e => { if (!e.target.closest(".searchbox")) sug.style.display = "none"; });
+})();
+map.on("zoomend moveend", placeNames);
+
+/* ---------- charts ---------- */
+function stack100(box, rows, cats, aria) {
+  resp(box, (w, sm) => {
+    const lw = sm ? 92 : 150, rh = 36, h = rows.length * rh + 8, x0 = lw, x1 = w - 4;
+    const svg = el("svg", { viewBox: `0 0 ${w} ${h}`, role: "img", "aria-label": aria }, box);
+    rows.forEach((r, i) => {
+      const y = 4 + i * rh, tot = r.v.reduce((a, b) => a + b, 0); let x = x0;
+      lbl(svg, x0 - 8, y + 18, r.n, "lab b", "end"); if (r.sub) lbl(svg, x0 - 8, y + 30, r.sub, "lab s m", "end");
+      r.v.forEach((v, k) => { if (!v) return; const bw = (x1 - x0) * v / tot; const b = el("rect", { x, y: y + 2, width: Math.max(.5, bw - .5), height: rh - 10, fill: cats[k][1] }, svg);
+        if (bw > 34) lbl(svg, x + 4, y + 20, Math.round(100 * v / tot) + "%", "lab s").setAttribute("style", "fill:#fff;font-weight:500");
+        b.addEventListener("mousemove", ev => showTip(`<b>${esc(r.n)}: ${esc(cats[k][0])}</b><br>${fmt(v)} (${(100 * v / tot).toFixed(1)}%)`, ev.clientX, ev.clientY)); b.addEventListener("mouseleave", hideTip); x += bw; });
+    });
+  });
+}
+function srcChart() {
+  const B = R.source.by_source;
+  stack100(document.getElementById("srcChart"), [{ n: "All wrecks", sub: fmt(R.source.n), v: B.map(b => b.n) }, { n: "Dated", sub: fmt(R.coverage.dated), v: B.map(b => b.dated) }], SOURCES, "Share of wrecks by source");
+  document.getElementById("srcLegend").innerHTML = SOURCES.map(([n, c]) => `<span><i class="sq" style="background:${c}"></i>${esc(n)}</span>`).join("");
+}
+const FLAGC = SITE.flagc;
+let LMODE = "cause";
+function listChart() {
+  const box = document.getElementById("listChart"), Y = R.lists.years, YF = R.lists.years_flag;
+  resp(box, (w, sm) => {
+    const cats = LMODE === "flag" ? FLAGC : CAUSES.filter((c, i) => i !== 6);
+    const idx = LMODE === "flag" ? FLAGC.map((f, i) => i) : CAUSES.map((c, i) => i).filter(i => i !== 6);
+    document.getElementById("listLegend").innerHTML = cats.map(([n, c]) => `<span><i class="sq" style="background:${c}"></i>${esc(n)}</span>`).join("");
+    const h = sm ? 300 : 380, m = { l: 46, r: 10, t: 28, b: 28 }, svg = el("svg", { viewBox: `0 0 ${w} ${h}`, role: "img", "aria-label": "Shipwrecks listed on Wikipedia per year, 1700 to 2025, stacked by " + LMODE }, box);
+    const rows = (LMODE === "flag" ? YF : Y).map(r => ({ x: r[0], v: idx.map(k => r[k + 1]) }));
+    const share = LMODE === "share", mx = share ? 1 : Math.max(...rows.map(r => r.v.reduce((a, b) => a + b, 0))) * 1.06;
+    const n = rows.length, bw = (w - m.l - m.r) / n, Yh = v => (h - m.t - m.b) * v / mx;
+    [[1914, 1918, "First World War"], [1939, 1945, "Second World War"]].forEach(([a, b, t]) => { const ia = a - 1700;
+      el("rect", { x: m.l + ia * bw, y: m.t - 16, width: (b - a + 1) * bw, height: h - m.t - m.b + 16, fill: css("--hot"), opacity: .1 }, svg);
+      lbl(svg, m.l + ia * bw + (a === 1914 ? -4 : 4), m.t - 5, sm ? (a === 1914 ? "WWI" : "WWII") : t, "lab s b", a === 1914 ? "end" : "start").setAttribute("style", `fill:${css("--hot")}`); });
+    const step = share ? .25 : 1000; for (let v = 0; v <= mx + 1e-9; v += step) { const y = h - m.b - Yh(v); el("line", { x1: m.l, x2: w - m.r, y1: y, y2: y, stroke: css("--rule") }, svg); lbl(svg, m.l - 6, y + 4, share ? Math.round(v * 100) + "%" : fmt(v), "lab s m", "end"); }
+    rows.forEach((r, i) => { const tot = r.v.reduce((a, b) => a + b, 0); const x = m.l + i * bw;
+      if (r.x % (sm ? 50 : 25) === 0 && r.x < 2025) lbl(svg, x + bw / 2, h - 10, String(r.x), "lab s m", "middle");
+      if (!tot) return; let y = h - m.b;
+      r.v.forEach((v, j) => { if (!v) return; const hh = Yh(share ? v / tot : v); y -= hh; el("rect", { x, y, width: Math.max(.6, bw - .15), height: hh, fill: cats[j][1] }, svg); });
+      const hit = el("rect", { x, y: m.t, width: bw, height: h - m.t - m.b, fill: "transparent" }, svg);
+      hit.addEventListener("mousemove", ev => showTip(`<b>${r.x}</b>: ${fmt(tot)} wrecks listed<br>` + cats.map((c, j) => r.v[j] ? `${esc(c[0])}: ${fmt(r.v[j])}` : "").filter(Boolean).join("<br>"), ev.clientX, ev.clientY)); hit.addEventListener("mouseleave", hideTip); });
+  });
+  listRedraw = redraws[redraws.length - 1];
+}
+let listRedraw = null;
+document.querySelectorAll("#listRow .btn").forEach(b => b.onclick = () => { LMODE = b.dataset.l; press("#listRow", b); if (listRedraw) listRedraw(); });
+function ancChart() {
+  const C = R.ancient.cent.filter(c => c.i >= 7);
+  resp(document.getElementById("ancChart"), (w, sm) => {
+    const h = sm ? 230 : 270, m = { l: 40, r: 8, t: 14, b: 44 }, svg = el("svg", { viewBox: `0 0 ${w} ${h}`, role: "img", "aria-label": "Ancient and medieval wrecks per century" }, document.getElementById("ancChart"));
+    const mx = 400, bw = (w - m.l - m.r) / C.length, Y = v => (h - m.t - m.b) * v / mx;
+    for (let v = 0; v <= mx; v += 100) { const y = h - m.b - Y(v); el("line", { x1: m.l, x2: w - m.r, y1: y, y2: y, stroke: css("--rule") }, svg); lbl(svg, m.l - 6, y + 4, v, "lab s m", "end"); }
+    C.forEach((c, i) => { const x = m.l + i * bw, b = el("rect", { x: x + 1, y: h - m.b - Y(c.n), width: bw - 2, height: Y(c.n), fill: c.i >= 13 && c.i <= 18 ? "#9C5B2E" : "#C7A27A" }, svg);
+      b.addEventListener("mousemove", ev => showTip(`<b>${esc(c.label)}</b>: about ${fmt(c.n)} wrecks`, ev.clientX, ev.clientY)); b.addEventListener("mouseleave", hideTip);
+      if (c.i % (sm ? 5 : 3) === 0 || c.i === 15) lbl(svg, x + bw / 2, h - m.b + 14, c.i < 15 ? (15 - c.i) * 100 + " BC" : c.i === 15 ? "AD 1" : "AD " + (c.i - 15) * 100, "lab s m", "middle"); });
+    lbl(svg, m.l + (15 - 7) * bw + bw + 6, m.t + 12, `${R.ancient.peak_label}: about ${fmt(R.ancient.peak_n)}`, "lab s b");
+    lbl(svg, m.l, h - 6, "darker: the Roman era, 200s BC to AD 300s", "lab s m");
+  });
+}
+function hbars(box, rows, aria, extra) {   // rows: [{n, v, c, v2, tipx}]
+  resp(box, (w, sm) => {
+    const lw = sm ? 140 : 250, rh = 28, h = rows.length * rh + 6, x0 = lw, x1 = w - 70, mx = Math.max(...rows.map(r => r.v));
+    const svg = el("svg", { viewBox: `0 0 ${w} ${h}`, role: "img", "aria-label": aria }, box);
+    rows.forEach((r, i) => { const y = 3 + i * rh, bw = (x1 - x0) * r.v / mx;
+      const nm = sm && r.n.length > 22 ? r.n.slice(0, 20) + "…" : r.n; lbl(svg, x0 - 8, y + 16, nm, "lab", "end");
+      const b = el("rect", { x: x0, y: y + 3, width: Math.max(1, bw), height: rh - 9, fill: r.c, rx: 2 }, svg);
+      if (r.v2) el("rect", { x: x0, y: y + 3, width: (x1 - x0) * r.v2 / mx, height: rh - 9, fill: "#000", opacity: .35, rx: 2 }, svg);
+      lbl(svg, x0 + bw + 6, y + 16, r.lab, "lab s b");
+      b.addEventListener("mousemove", ev => showTip(`<b>${esc(r.n)}</b><br>${r.tipx}`, ev.clientX, ev.clientY)); b.addEventListener("mouseleave", hideTip); });
+  });
+}
+function causeChart() {
+  const L0 = R.lists.causes.map((c, i) => ({ ...c, c: CAUSES[i][1] })).filter((c, i) => i !== 6).sort((a, b) => b.n - a.n);
+  hbars(document.getElementById("causeChart"), L0.map(c => ({ n: c.name, v: c.n, c: c.c, lab: `${fmt(c.n)} (${Math.round(c.pct)}%)`, tipx: `${fmt(c.n)} listed wrecks, ${c.pct.toFixed(1)}% of all` })), "Cause of loss of listed wrecks");
+}
+function typeChart() {
+  const L0 = R.types.list.slice(0, -1).map((c, i) => ({ ...c, c: TYPES[i][1] })).sort((a, b) => b.n - a.n);
+  hbars(document.getElementById("typeChart"), L0.map(c => ({ n: c.name, v: c.n, c: c.c, lab: `${fmt(c.n)} (${Math.round(c.pct_known)}%)`, tipx: `${fmt(c.n)} wrecks, ${c.pct_known.toFixed(1)}% of those with a type` })), "Vessel types where known");
+}
+function flagChart() {
+  const F = R.lists.flags.filter(f => f.name !== "Not recorded" && f.name !== "Other").slice(0, 12);
+  hbars(document.getElementById("flagChart"), F.map(f => ({ n: f.name, v: f.n, v2: f.ww2, c: (FLAGC.find(x => x[0] === f.name) || [0, "#8A8F96"])[1], lab: `${fmt(f.n)} (${f.pct.toFixed(1)}%)`, tipx: `${fmt(f.n)} listed wrecks; ${fmt(f.ww2)} lost 1939 to 1945` })), "Listed wrecks by flag");
+}
+function gyTable() {
+  const t = document.getElementById("gyTable"), G = R.graveyards;
+  t.innerHTML = `<thead><tr><th>Area</th><th>Where</th><th class="r">Wrecks</th><th class="r">Dated</th><th>Best known</th></tr></thead><tbody>` + G.map((g, i) => `<tr data-i="${i}"><td>${esc(g.name)}</td><td>${esc(g.where)}</td><td class="r">${fmt(g.n)}</td><td class="r">${fmt(g.dated)}</td><td>${esc(g.famous.slice(0, 2).join(", "))}</td></tr>`).join("") + `</tbody>`;
+  t.querySelectorAll("tr[data-i]").forEach(r => r.onclick = () => { document.getElementById("atlas").scrollIntoView({ behavior: "smooth" }); setTimeout(() => goBox(G[+r.dataset.i]), 300); });
+}
+function oldTable() {
+  const t = document.getElementById("oldTable"), O = R.oldest;
+  t.innerHTML = `<thead><tr><th>Wreck</th><th class="r">Year</th><th>Where</th><th>Year from</th></tr></thead><tbody>` + O.map((o, i) => `<tr data-i="${i}"><td>${esc(o.name)}</td><td class="r">${yr(o.y)}</td><td>${esc(o.where)}</td><td>${esc(o.how)}</td></tr>`).join("") + `</tbody>`;
+  t.querySelectorAll("tr[data-i]").forEach(r => r.onclick = () => { const o = O[+r.dataset.i]; if (!P) return; const i = P.findIndex(p => p[8] === o.id); if (i >= 0) { document.getElementById("atlas").scrollIntoView({ behavior: "smooth" }); setTimeout(() => pickWreck(i, true), 250); } });
+}
+function charts() { listChart(); srcChart(); ancChart(); causeChart(); typeChart(); flagChart(); gyTable(); oldTable(); }
+
+/* ---------- start ---------- */
+document.getElementById("theme").onclick = () => { const r = document.documentElement; r.dataset.theme = isDark() ? "light" : "dark"; setTiles(); legend(); redraws.forEach(f => f()); };
+charts(); setTiles(); legend(); setYears(YMIN, YMAX); placeNames(); side();
+</script>
+/*FULLSCREEN*/
+</body>
+</html>

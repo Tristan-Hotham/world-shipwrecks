@@ -1,0 +1,146 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage{fontspec}
+\setmainfont{TeX Gyre Pagella}
+\newfontfamily\headfont{Inter}[UprightFont=*-ExtraBold,BoldFont=*-ExtraBold,Extension=.otf,Path=/usr/share/fonts/opentype/inter/]
+\usepackage[a4paper,margin=2.3cm]{geometry}
+\usepackage{graphicx,booktabs,float,caption,array,xcolor,longtable}
+\usepackage{xurl}
+\usepackage[hidelinks]{hyperref}
+\usepackage{titlesec}
+\usepackage[round]{natbib}
+\usepackage{setspace}
+\setstretch{1.05}
+\renewcommand{\topfraction}{0.9}
+\renewcommand{\bottomfraction}{0.8}
+\renewcommand{\textfraction}{0.1}
+\renewcommand{\floatpagefraction}{0.75}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.55em}
+\titleformat{\section}{\headfont\Large}{\thesection}{0.8em}{}
+\titleformat{\subsection}{\headfont\large}{\thesubsection}{0.8em}{}
+\captionsetup{font=small,labelfont=bf}
+\urlstyle{same}
+\hypersetup{pdftitle={Shipwrecks of the World, and How Many over Time},pdfauthor={Tristan Hotham}}
+
+\begin{document}
+\begin{center}
+{\Large\bfseries Shipwrecks of the World, and How Many over Time\par}
+\vspace{0.4em}
+{\large Three centuries of recorded losses:\\{{lists.n|int}} wrecks in Wikipedia's lists of shipwrecks, 1700 to 2025\par}
+\vspace{1.2em}
+{\large Tristan Hotham\par}
+\vspace{0.3em}
+{\small Independent researcher\\
+ORCID: 0000-0003-4931-9349\\
+DOI: \href{https://doi.org/{{meta.doi}}}{https://doi.org/{{meta.doi}}}\par}
+\vspace{0.8em}
+2026
+\end{center}
+
+\begin{quote}
+\small
+\begin{center}\textbf{Abstract}\end{center}
+English Wikipedia lists shipwrecks month by month from the 1820s and year by year or decade by decade before that. I turned every list from 1700 to 2025 into one table of {{lists.n|int}} wrecks, after removing {{lists.dups|int}} duplicates, and counted them by year, cause and flag. Three of the five worst years are war years: {{lists.peak_year|raw}} ({{lists.peak_n|int}} wrecks), 1917 ({{lists.y1917|int}}) and 1942 ({{lists.y1942|int}}). The Second World War averages {{lists.ww2_avg|int}} listed wrecks a year, {{lists.ww2_vs_inter|f1}} times the interwar rate, and {{lists.war_ww2_pct|pc}} of its entries were lost to torpedoes, aircraft, mines or gunfire. But the series is shaped as much by its sources as by the sea: {{lists.c19_pct|pc}} of all entries are from the 1800s, when the lists average {{lists.high19_avg|int}} wrecks a year from 1850 to 1879, and {{lists.uk_c19_pct|pc}} of those are British ships, reflecting the British newspapers and Lloyd's List from which the pages were compiled; between 1890 and 1913 the average falls to {{lists.dip_avg|int}}. Most nineteenth-century losses were strandings ({{lists.c19_aground_pct|pc}}). I pair the series with a map of {{source.n|int}} wrecks with coordinates from the lists, Wikidata (including bulk imports from the Scottish and Welsh heritage records) and NOAA's wreck charts, which has its own strong bias: {{coverage.uk_pct|pc}} of mapped wrecks lie in UK waters. Both are records of recording as much as of loss.
+
+\textbf{Keywords:} shipwrecks; maritime history; Wikipedia; Lloyd's List; World War; Wikidata; AWOIS; sampling bias; open data; mapping
+\end{quote}
+
+\section{Introduction}
+How many ships have been lost at sea, and when? UNESCO's frequently quoted estimate is that some three million wrecks lie on the sea bed \citep{unesco}, but no census exists. What exists are records: newspaper casualty columns, insurers' lists, naval loss returns, hydrographic charts and heritage registers. Each counts what its compilers could see.
+
+English Wikipedia contains an extraordinary compilation of such records. Volunteers have built a ``List of shipwrecks'' page for every month since the 1820s, and for every year or decade before, each entry giving a date, the ship, its flag and a short description of the loss, usually with a citation \citep{wikilists}. This paper turns those pages into a single time series from 1700 to 2025, by cause and by flag, and asks what it shows and what it cannot. It adds a map of every wreck I could find in open data with coordinates, and an interactive version with a year slider (\url{{{meta.page}}}).
+
+\section{Data}
+\textbf{Wikipedia lists.} A structured table was scraped from every English Wikipedia ``List of shipwrecks'' page for 1700 to 2025: the decade pages for the 1700s to 1750s, year pages, and monthly pages from 1820 (year pages for those years hold only entries of unknown date). It has {{lists.rows|int}} rows with page title, year, month, date heading, ship, flag, a cause sorted into buckets (wrecked or aground, foundered, collision, fire or explosion, torpedo, mine, aircraft, other war, scuttled, other or unknown) and, for {{lists.with_coords|int}} entries, coordinates. Wikipedia text is CC BY-SA 4.0; I credit Wikipedia contributors and share the derived table under the same licence.
+
+\textbf{Wikidata.} Every Wikidata \citep{wikidata} item with coordinates that is an instance of shipwreck (Q852190) or has a shipwrecking event, through the QLever service: {{source.wd_items|int}} items, of which {{source.wd_mapped|int}} remain after dropping {{source.wd_no_point|int}} without usable coordinates and {{source.wd_not_ships|int}} that are not vessels. Two bulk imports dominate: Scottish records from Canmore \citep{canmore} and Welsh records from Coflein \citep{coflein}. Further Wikidata extracts give dated events (shipwrecking, sinking, scuttling, destruction) for {{source.extra_items_with_dates|int}} items and other dates.
+
+\textbf{NOAA AWOIS.} The wrecks layer of the Automated Wreck and Obstruction Information System \citep{awois}, a public-domain record of wrecks in United States waters, from a copy on GitHub \citep{awoisgh}: {{source.awois_rows|int}} records, {{source.awois_kept|int}} after removing rocks and duplicates of Wikidata wrecks.
+
+\textbf{Ancient wrecks and geography.} The Summary Geodatabase of Shipwrecks 1500~BCE to 1500~CE (Harvard Mapping Past Societies, after \citealt{strauss} and \citealt{parker}) via \citet{ancientgh}, used only as counts per century because its licence is not stated in that copy; Natural Earth \citep{naturalearth} outlines.
+
+\section{Methods}
+\subsection{The list series}
+I removed {{lists.dups|int}} rows that repeat the same ship under the same date heading on the same page, keeping rows without a ship name ({{lists.no_ship|int}}), since several unnamed vessels can be lost on one day; {{lists.n|int}} entries remain. The year comes from the page or, on the decade pages, from the date heading where it contains one; {{lists.decade_only|int}} entries without a year count only by decade. Causes are grouped into war (torpedo, mine, aircraft, other war), foundered or storm, wrecked or ran aground, collision, fire or explosion, scuttled, and not recorded. Flags are grouped across regimes and spellings: for example the United Kingdom of Great Britain and Ireland, the Kingdom of Great Britain and the United Kingdom as the United Kingdom; Prussia, Hamburg, the German Empire and Nazi Germany as Germany; the Russian Empire and the Soviet Union together.
+
+\subsection{The map}
+Years of loss for Wikidata wrecks come, in order, from the latest dated shipwrecking or sinking event, the point in time, service retirement, dissolution or end time, inception of an item that is only a wreck, and then text (``sank in 1901''; Canmore labels of documented losses such as ``Unknown 1830''). For AWOIS they come from dates after ``sunk'' in the survey notes or the year sunk field. I never infer a year from a launch date or a war. List entries with coordinates are mapped unless they match a Wikidata or AWOIS wreck of the same name within 20~km ({{source.lists_points_dup|int}} such matches, which also gave {{source.lists_points_gave_year|int}} wrecks a year). Table~\ref{tab:methods} lists the sources of the {{coverage.dated|int}} mapped years.
+
+{{TABLE_METHODS}}
+
+\section{Results}
+\subsection{How many over time}
+Figure~\ref{fig:years} shows the series. It rises from {{lists.early_avg|f1}} entries a year before 1750 to a nineteenth-century plateau that peaks at {{lists.peak19_n|int}} in {{lists.peak19_year|raw}}, averaging {{lists.high19_avg|int}} a year from 1850 to 1879. It then drops sharply: from 1890 to 1913 the average is {{lists.dip_avg|int}}. The two world wars stand out. The First averages {{lists.ww1_avg|int}} a year, {{lists.ww1_vs_dip|f1}} times the years before it, with {{lists.y1917|int}} in 1917; the Second averages {{lists.ww2_avg|int}}, {{lists.ww2_vs_inter|f1}} times the {{lists.inter_avg|int}} a year of 1919 to 1938 and {{lists.ww2_vs_high19|f2}} times the 1850 to 1879 average, with {{lists.y1942|int}} in 1942 and {{lists.peak_n|int}} in {{lists.peak_year|raw}}, the highest of any year. Since 1966 the lists hold about {{lists.modern_avg|int}} wrecks a year. Table~\ref{tab:top} lists the ten worst years.
+
+\begin{figure}[tbp]\centering\includegraphics[width=\textwidth]{f_years.png}
+\caption{Shipwrecks listed on Wikipedia per year, 1700 to 2025, by cause. Shaded: the two world wars.}\label{fig:years}\end{figure}
+
+{{TABLE_TOP}}
+
+\subsection{Causes}
+{{lists.cause_known_pct|pc}} of entries have a cause (Figure~\ref{fig:causes}). Over the whole period most wrecks ran aground or were driven ashore ({{lists.causes.2.pct|pc}}), followed by foundering ({{lists.causes.1.pct|pc}}), war ({{lists.causes.0.pct|pc}}), collision ({{lists.causes.3.pct|pc}}), fire or explosion ({{lists.causes.4.pct|pc}}) and scuttling ({{lists.causes.5.pct|pc}}). In the 1800s, {{lists.c19_aground_pct|pc}} of entries were strandings and {{lists.c19_founder_pct|pc}} founderings. War causes {{lists.war_ww1_pct|pc}} of First World War entries and {{lists.war_ww2_pct|pc}} of Second World War entries, and {{lists.war_in_wars_pct|pc}} of all war losses fall in the two wars. In the Second World War, torpedoes account for {{lists.war_kinds_ww2.Torpedo|int}} entries, aircraft {{lists.war_kinds_ww2.Aircraft|int}}, mines {{lists.war_kinds_ww2.Mine|int}} and gunfire, capture or other action {{lists.war_kinds_ww2.Gunfire, capture or other war|int}}.
+
+\begin{figure}[tbp]\centering\includegraphics[width=\textwidth]{f_causes.png}
+\caption{Left: causes of listed wrecks. Right: vessel types of mapped wrecks, where known.}\label{fig:causes}\end{figure}
+
+\subsection{Flags}
+{{lists.flag_recorded_pct|pc}} of entries have a flag. {{lists.uk_pct|pc}} are British, {{lists.flags.1.pct|pc1}} American, then German, French and Norwegian (Table~\ref{tab:flags}). The British share is {{lists.uk_c19_pct|pc}} in the 1800s and falls to {{lists.uk_ww2_pct|pc}} in 1939 to 1945, when German, Japanese, Italian and Soviet losses join the lists (Figure~\ref{fig:flags}).
+
+\begin{figure}[tbp]\centering\includegraphics[width=\textwidth]{f_flags.png}
+\caption{Share of listed wrecks by flag, per decade (decades with at least 300 entries).}\label{fig:flags}\end{figure}
+
+{{TABLE_FLAGS}}
+
+\subsection{The map}
+Figure~\ref{fig:maps} maps {{source.n|int}} wrecks with coordinates: {{source.lists_points|int}} list entries, most of them wartime losses whose positions were logged, {{source.wd_mapped|int}} Wikidata wrecks and {{source.awois_kept|int}} from AWOIS. {{coverage.uk_pct|pc}} lie in UK waters ({{coverage.scotland_pct|pc}} off Scotland, {{coverage.england_pct|pc1}} off England), {{coverage.us_pct|pc}} off the United States and {{coverage.rest_pct|pc}} elsewhere (Figure~\ref{fig:record}). Scotland has {{coverage.england_per_scotland|f1}} times as many mapped wrecks as England, a result of the Canmore import. {{coverage.dated|int}} mapped wrecks ({{coverage.dated_pct|pc}}) have a year. Table~\ref{tab:gy} and Figure~\ref{fig:gy} count wrecks in named graveyards: the Scottish firths lead, the English Channel has {{gy.English Channel.n|int}}, mostly wartime list entries, and famous Pacific graveyards remain thin (Truk Lagoon {{gy.Truk Lagoon.n|int}}, Ironbottom Sound {{gy.Ironbottom Sound.n|int}}).
+
+\begin{figure}[tbp]\centering\includegraphics[width=\textwidth]{f_maps.png}
+\caption{Mapped wrecks, coloured by era of loss where a year is known (grey: undated), with the British Isles enlarged and mapped wrecks with a year per decade below.}\label{fig:maps}\end{figure}
+
+\begin{figure}[tbp]\centering\includegraphics[width=.9\textwidth]{f_record.png}
+\caption{Mapped wrecks by source (top) and nearest land (bottom).}\label{fig:record}\end{figure}
+
+\begin{figure}[tbp]\centering\includegraphics[width=.92\textwidth]{f_graveyards.png}
+\caption{Mapped wrecks in named graveyards, coloured by the source most of them come from.}\label{fig:gy}\end{figure}
+
+{{TABLE_GY}}
+
+\subsection{Before 1700}
+The oldest dated wrecks in Wikidata are the Dokos wreck ({{oldest.0.y|yr}}), the Uluburun ship ({{oldest.1.y|yr}}) and the Antikythera wreck ({{oldest.3.y|yr}}) (Table~\ref{tab:oldest}). The Summary Geodatabase of Shipwrecks gives a fuller view of antiquity (Figure~\ref{fig:ancient}): of its {{ancient.n_rows|int}} wrecks, {{ancient.n_used|int}} have a date range of 300 years or less, and spreading each over its range the busiest century is the {{ancient.peak_label|raw}} (about {{ancient.peak_n|int}}), the pattern \citet{parker} and \citet{wilson} read as a proxy for Roman trade.
+
+\begin{figure}[tbp]\centering\includegraphics[width=.92\textwidth]{f_ancient.png}
+\caption{Wrecks per century in the Summary Geodatabase of Shipwrecks, each spread over its date range. Darker: the Roman era.}\label{fig:ancient}\end{figure}
+
+{{TABLE_OLDEST}}
+
+\section{Discussion}
+The list series confirms what every maritime historian would expect of the twentieth century: the world wars, and above all the Second, were the most destructive years for shipping on record, and the lists show it even though their coverage of the twentieth century is far thinner than of the nineteenth. The nineteenth-century plateau needs more care. Its height owes much to the sources editors used: digitised British newspapers and Lloyd's List, which reported losses of British-registered and British-insured ships with great regularity \citep{lloyds}. The sharp fall after the 1880s coincides with the end of the newspaper runs most heavily used, not with any sudden change at sea, even if the shift from sail to steam did make shipping safer over the period. Comparisons across periods are therefore unsafe; comparisons of shape within a period, and of causes and flags, are more robust.
+
+\section{Limitations}
+First, the series counts entries in a volunteer compilation, not wrecks: coverage varies with sources, editors and decades. Second, it is weighted to British ships and British sources in the 1800s. Third, the scrape buckets causes from short descriptions, and {{lists.causes.7.pct|pc}} of entries have none. Fourth, some ships appear in more than one list (for example when damaged and later lost); I removed only exact repeats. Fifth, the map is dominated by the Canmore and Coflein imports and by AWOIS, and only {{coverage.dated_pct|pc}} of mapped wrecks have a year. Sixth, depth is not recorded for most wrecks. Finally, the ancient catalogue is used only in aggregate.
+
+\section{Conclusion}
+Wikipedia's shipwreck lists make it possible to count recorded shipwrecks year by year over three centuries. The counts show the world wars standing above everything else, and a long nineteenth-century plateau of strandings and founderings that tells us as much about British newspapers as about the sea. Read with that caveat, they are a remarkable, open, reusable record.
+
+\section*{Data and code availability}
+The interactive map is at \url{{{meta.page}}}. Data and code are at \url{{{meta.repo}}} and archived with this paper at \url{https://doi.org/{{meta.doi}}}. The derived Wikipedia list table is released under CC BY-SA 4.0, other derived data under CC BY 4.0, and code under the MIT licence. Wikidata is CC0; AWOIS is a public-domain US Government work; the ancient wreck catalogue is not redistributed.
+
+\section*{AI statement}
+I wrote the text, with drafting and editing assistance from Claude (Anthropic), which also helped prepare the analysis code. I reviewed and checked all text and results.
+
+\begin{thebibliography}{9}
+\bibitem[AWOIS mirror(2026)]{awoisgh} Bowden, J. A. (2026) AWOIS-data. GitHub repository. \url{https://github.com/jalbertbowden/AWOIS-data}
+\bibitem[Canmore(2026)]{canmore} Historic Environment Scotland (2026) Canmore: the national record of the historic environment. \url{https://canmore.org.uk/}
+\bibitem[Coflein(2026)]{coflein} Royal Commission on the Ancient and Historical Monuments of Wales (2026) Coflein. \url{https://coflein.gov.uk/}
+\bibitem[Lloyd's List(2026)]{lloyds} Lloyd's List (1734 onwards) London: Lloyd's. Shipping news and casualty reports, cited throughout the Wikipedia lists of shipwrecks.
+\bibitem[Mangelson(2024)]{ancientgh} Mangelson, A. (2024) ancient\_shipwrecks: Summary Geodatabase of Shipwrecks 1500BCE to 1500CE. GitHub repository. \url{https://github.com/austinw8/ancient_shipwrecks}
+\bibitem[Natural Earth(2026)]{naturalearth} Natural Earth (2026) Admin 0 countries, admin 1 units and populated places. Public domain. \url{https://www.naturalearthdata.com/}
+\bibitem[NOAA(2026)]{awois} NOAA Office of Coast Survey (2026) Automated Wreck and Obstruction Information System (AWOIS) and Wrecks and Obstructions Database. \url{https://nauticalcharts.noaa.gov/data/wrecks-and-obstructions.html}
+\bibitem[Parker(1992)]{parker} Parker, A. J. (1992) \emph{Ancient Shipwrecks of the Mediterranean and the Roman Provinces}. Oxford: BAR International Series 580.
+\bibitem[Strauss(2013)]{strauss} Strauss, J. (2013) Shipwrecks Database. Version 1.0. Oxford Roman Economy Project. \url{http://oxrep.classics.ox.ac.uk/databases/shipwrecks_database/}
+\bibitem[UNESCO(2026)]{unesco} UNESCO (2026) Underwater cultural heritage. \url{https://www.unesco.org/en/underwater-heritage}
+\bibitem[Wikipedia(2026)]{wikilists} Wikipedia contributors (2026) Lists of shipwrecks (List of shipwrecks in \emph{month year}, 1700 to 2025). CC BY-SA 4.0. \url{https://en.wikipedia.org/wiki/Lists_of_shipwrecks}
+\bibitem[Wikidata(2026)]{wikidata} Wikidata (2026) Wikidata, the free knowledge base. CC0. \url{https://www.wikidata.org/}, queried with QLever, \url{https://qlever.cs.uni-freiburg.de/}
+\bibitem[Wilson(2011)]{wilson} Wilson, A. (2011) Developments in Mediterranean shipping and maritime trade from the Hellenistic period to AD 1000. In Robinson, D. and Wilson, A. (eds) \emph{Maritime Archaeology and Ancient Trade in the Mediterranean}. Oxford: Oxford Centre for Maritime Archaeology, 33 to 59.
+\end{thebibliography}
+\end{document}
